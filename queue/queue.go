@@ -25,7 +25,7 @@ func MakeQueue(api_conn_options, ssh_serv_conn_options *redis.Options) Queue {
 		API_CLI: api_connection,
 		SSH_SERV_CLI: ssh_serv_connection,
 		CREATED: time.Now(),
-		ONLINE: err1 !=nil || err2 !=nil,
+		ONLINE: err1 !=nil && err2 !=nil,
 		API_CONN_OPTIONS: api_conn_options,
 		SSH_SERV_CONN_OPTIONS: ssh_serv_conn_options,
 	}
@@ -53,8 +53,7 @@ func CheckAlive(queue Queue)Queue{
 }
 
 func handleRequest(queue Queue, EXIT_CODE int){
-	
-	//
+
 
 }
 
@@ -62,16 +61,57 @@ func parseJSON(){
 
 }
 
-
-func shutDownQueue(){
+func QueueIsEmpty(queue Queue) bool{
+	rslt, err := queue.API_CLI.Keys("*").Result()
+	if err == nil{
+		return false
+	}
+	return len(rslt) == 0
 
 }
-func raiseInterrupt(){
-	//little unsure how to make this 
+
+func shutDownQueue(queue Queue, force bool) int{
+	queue.API_CLI.Close()
+	queue.SSH_SERV_CLI.Close()
+	//run script to restart docker container or smthing TBD, if we are running kubernetes then 
+	//it 
+
+	//check for a successful shutdown
+	shutDownCheck :=  false
+	if !shutDownCheck{
+		return QUEUE_CONTAINER_SHUTDOWN_UNSUCCESSFUL
+	}
+	return QUEUE_SHUT_DOWN_SUCCESSFUL
+}
+
+func restartQueue(queue *Queue, force bool) int{
+	if !QueueIsEmpty(*queue) && !force{
+		return QUEUE_RESTART_FAIL_QUEUE_NOT_EMPTY
+	}
+	if EmptyQueue(*queue) != nil{
+		return QUEUE_RESTART_FAIL_COULD_NOT_EMPTY_QUEUE
+	}
+	
+	if shutDownQueue(*queue, force) !=QUEUE_SHUT_DOWN_SUCCESSFUL{
+		return QUEUE_SHUTDOWN_FAIL
+	}
+	//run script to restart container
+	//check if a container is alive
+	*queue = MakeQueue(queue.API_CONN_OPTIONS, queue.SSH_SERV_CONN_OPTIONS)
+
+	return QUEUE_RESTART_SUCCESSFUL
 
 }
 
 
-func clearInterrupt(){
+func EmptyQueue(queue Queue)error{
+	return queue.SSH_SERV_CLI.Del("*").Err()
+}
 
+func addRequestToQueue(queue Queue, key string, value Queue_Request)error{
+	return queue.API_CLI.Set(key, value, 0).Err()
+}
+
+func removeRequestFromQueue(queue Queue, key string) error{
+	return  queue.API_CLI.Del(key).Err()
 }

@@ -6,22 +6,20 @@ import (
 	"time"
 	"github.com/go-redis/redis"
 )
+var queue Queue //singleton implementation
 
 func handleErr(err  error, cliname string){
 	if err != nil{
-		os.Setenv("QUEUE_AVAILABLE", UNSET )
-		os.Setenv(cliname+"_ONLINE", UNSET )
-		
+		os.Setenv("QUEUE_AVAILABLE", UNSET ) 
 	} else{
 		os.Setenv("QUEUE_AVAILABLE", SET )
-		os.Setenv(cliname+"_ONLINE", SET )
 	}
 }
 
 func MakeQueue(api_conn_options, ssh_serv_conn_options *redis.Options) Queue {
-	api_connection, err1 := MakeQueueConnection(api_conn_options, API_Q_CLI)
-	ssh_serv_connection, err2:= MakeQueueConnection(ssh_serv_conn_options, SSH_Q_CLI )
-	queue := Queue{
+	api_connection, err1 := makeQueueConnection(api_conn_options, API_Q_CLI)
+	ssh_serv_connection, err2:= makeQueueConnection(ssh_serv_conn_options, SSH_Q_CLI )
+	queue = Queue{
 		API_CLI: api_connection,
 		SSH_SERV_CLI: ssh_serv_connection,
 		CREATED: time.Now(),
@@ -31,7 +29,7 @@ func MakeQueue(api_conn_options, ssh_serv_conn_options *redis.Options) Queue {
 	}
 	return queue
 }
-func MakeQueueConnection(options *redis.Options, name string ) (*redis.Client, error)   {
+func makeQueueConnection(options *redis.Options, name string ) (*redis.Client, error)   {
 	//begin client
 	queueConn := redis.NewClient(options)
 	//check if a container exists
@@ -41,7 +39,7 @@ func MakeQueueConnection(options *redis.Options, name string ) (*redis.Client, e
 }
 
 
-func CheckAlive(queue Queue)Queue{
+func CheckAlive()Queue{
 	_, err1 := queue.API_CLI.Ping().Result()
 	_, err2 := queue.SSH_SERV_CLI.Ping().Result()
 	if err1 !=nil || err2 !=nil {
@@ -52,16 +50,7 @@ func CheckAlive(queue Queue)Queue{
 	return queue
 }
 
-func handleRequest(queue Queue, EXIT_CODE int){
-
-
-}
-
-func parseJSON(){
-
-}
-
-func QueueIsEmpty(queue Queue) bool{
+func QueueIsEmpty() bool{
 	rslt, err := queue.API_CLI.Keys("*").Result()
 	if err == nil{
 		return false
@@ -70,11 +59,11 @@ func QueueIsEmpty(queue Queue) bool{
 
 }
 
-func shutDownQueue(queue Queue, force bool) int{
+func shutDownQueue( force bool) int{
 	queue.API_CLI.Close()
 	queue.SSH_SERV_CLI.Close()
 	//run script to restart docker container or smthing TBD, if we are running kubernetes then 
-	//it 
+	//it might be easier to get this to work
 
 	//check for a successful shutdown
 	shutDownCheck :=  false
@@ -84,34 +73,44 @@ func shutDownQueue(queue Queue, force bool) int{
 	return QUEUE_SHUT_DOWN_SUCCESSFUL
 }
 
-func restartQueue(queue *Queue, force bool) int{
-	if !QueueIsEmpty(*queue) && !force{
+func restartQueue( force bool) int{
+	if !QueueIsEmpty() && !force{
 		return QUEUE_RESTART_FAIL_QUEUE_NOT_EMPTY
 	}
-	if EmptyQueue(*queue) != nil{
+	if EmptyQueue() != nil{
 		return QUEUE_RESTART_FAIL_COULD_NOT_EMPTY_QUEUE
 	}
 	
-	if shutDownQueue(*queue, force) !=QUEUE_SHUT_DOWN_SUCCESSFUL{
+	if shutDownQueue( force) !=QUEUE_SHUT_DOWN_SUCCESSFUL{
 		return QUEUE_SHUTDOWN_FAIL
 	}
 	//run script to restart container
 	//check if a container is alive
-	*queue = MakeQueue(queue.API_CONN_OPTIONS, queue.SSH_SERV_CONN_OPTIONS)
+	queue = MakeQueue(queue.API_CONN_OPTIONS, queue.SSH_SERV_CONN_OPTIONS)
 
 	return QUEUE_RESTART_SUCCESSFUL
 
 }
 
 
-func EmptyQueue(queue Queue)error{
+func EmptyQueue()error{
 	return queue.SSH_SERV_CLI.Del("*").Err()
 }
 
-func addRequestToQueue(queue Queue, key string, value Queue_Request)error{
-	return queue.API_CLI.Set(key, value, 0).Err()
+func AddRequestToQueue( key string, value Queue_Request)error{
+	//update queue inside Queue object
+	return queue.API_CLI.Set(key, value, TTL).Err()
 }
 
-func removeRequestFromQueue(queue Queue, key string) error{
+func RemoveRequestFromQueue( key string) error{
+	//update queue inside Queue object
 	return  queue.API_CLI.Del(key).Err()
+}
+
+func GetRequestFromQueue( key string)string {
+	return queue.SSH_SERV_CLI.Get(key).String()
+}
+
+func GetNextRequestInLine(){
+
 }

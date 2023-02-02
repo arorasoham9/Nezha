@@ -28,18 +28,19 @@ const(
 	QUEUE_RESTART_SUCCESSFUL = 545562
 	QUEUE_CONTAINER_SHUTDOWN_UNSUCCESSFUL = 583283838
 	QUEUE_SHUT_DOWN_SUCCESSFUL = 82382
+	TTL = 1000000000
 
 )
 
 
 
 type Queue_Request  struct {
-	NAME string
-	EMAIL string
-	CURRENT_IP string
-	LOCATION Location
-	TIME time.Time
-	LASTSEEN time.Time
+	NAME string `json:"name"`
+	EMAIL string `json:"email"`
+	CURRENT_IP string `json:"current_ip"`
+	LOCATION string `json:"location"`
+	CREATED_AT string `json:"created_at"`
+	LASTSEEN string `json:"last_seen"`
 }
 
 
@@ -50,11 +51,11 @@ type Location struct{
 }
 
 type Queue struct{
-	API_CLI	*redis.Client
-	SSH_SERV_CLI *redis.Client
-	CREATED time.Time
-	ONLINE bool
-	SSH_SERV_CONN_OPTIONS *redis.Options
-	API_CONN_OPTIONS *redis.Options
+	API_CLI	*redis.Client 
+	SSH_SERV_CLI *redis.Client  
+	CREATED time.Time 
+	ONLINE bool 
+	SSH_SERV_CONN_OPTIONS *redis.Options 
+	API_CONN_OPTIONS *redis.Options 
 }
 

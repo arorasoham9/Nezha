@@ -5,22 +5,30 @@ import (
 	// b "ECE49595_PROJECT/basic"
 	// ssh "ECE49595_PROJECT/ssh"
 	q "ECE49595_PROJECT/queue"
+
+	"github.com/go-redis/redis"
 	"fmt"
 )
-const address = "localhost"
-const port = "6379"
-var user string   = "root"
-var host_port  string =  "45.79.26.72:22"
-var cmd  string = "uname -a"
-var  pass  string = "BYe7_c9p.RQYhew"
 
 
 
 func main(){
 
-	conn, err := q.MakeQueueConnection(port, address, "", 0, q.API_Q_CLI )
-	if err != nil{
-		fmt.Println("successful")
-	}
-	fmt.Println(conn.Ping().Result())
+	queue := q.MakeQueue(&redis.Options{ 
+		Addr: "localhost:6379", 
+		Password: "", 
+		 DB: 0, 
+   }, &redis.Options{ 
+	Addr: "localhost:6379", 
+	Password: "", 
+	 DB: 0, 
+} )
+	q.AddRequestToQueue(queue, "test9", q.Queue_Request{NAME: "sabash", 
+	EMAIL: "sabutdana@gmail.com",
+	CURRENT_IP: "mei nahi bataonga",
+	LOCATION: "jhadio k peeche",
+	CREATED_AT: "cake murder day", 
+	LASTSEEN:"don ko dhundna mushkil hi nahi namumkin hai"})
+	fmt.Println(q.GetRequestFromQueue(queue, "test9"))
+
 }

@@ -35,6 +35,14 @@ func VerifyPassword(userPassword string, providedPassword string) (bool, string)
 
 	return check, msg
 }
+func SignUp() gin.HandlerFunc {
+	return func(c *gin.Context) {
+		//var ctx, cancel = context.WithTimeout(context.Background(), 100*time.Second)
+		//var user models.User
+		//var foundUser models.User
+		fmt.Println("%+v", c)
+	}
+}
 
 func Login() gin.HandlerFunc {
 	return func(c *gin.Context) {

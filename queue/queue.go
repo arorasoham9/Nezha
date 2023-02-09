@@ -5,6 +5,7 @@ import (
 	"os"
 	"time"
 	"github.com/go-redis/redis"
+	"encoding/json"
 )
 var queue Queue //singleton implementation
 
@@ -16,7 +17,7 @@ func handleErr(err  error, cliname string){
 	}
 }
 
-func MakeQueue(api_conn_options, ssh_serv_conn_options *redis.Options) Queue {
+func MakeQueue(api_conn_options, ssh_serv_conn_options *redis.Options) {
 	api_connection, err1 := makeQueueConnection(api_conn_options, API_Q_CLI)
 	ssh_serv_connection, err2:= makeQueueConnection(ssh_serv_conn_options, SSH_Q_CLI )
 	queue = Queue{
@@ -27,8 +28,8 @@ func MakeQueue(api_conn_options, ssh_serv_conn_options *redis.Options) Queue {
 		API_CONN_OPTIONS: api_conn_options,
 		SSH_SERV_CONN_OPTIONS: ssh_serv_conn_options,
 	}
-	return queue
 }
+
 func makeQueueConnection(options *redis.Options, name string ) (*redis.Client, error)   {
 	//begin client
 	queueConn := redis.NewClient(options)
@@ -38,14 +39,13 @@ func makeQueueConnection(options *redis.Options, name string ) (*redis.Client, e
 	return queueConn, err
 }
 
-
 func CheckAlive()Queue{
 	_, err1 := queue.API_CLI.Ping().Result()
 	_, err2 := queue.SSH_SERV_CLI.Ping().Result()
 	if err1 !=nil || err2 !=nil {
 		queue.API_CLI.Close()
 		queue.SSH_SERV_CLI.Close()
-		queue = MakeQueue(queue.API_CONN_OPTIONS,queue.SSH_SERV_CONN_OPTIONS)
+		MakeQueue(queue.API_CONN_OPTIONS,queue.SSH_SERV_CONN_OPTIONS)
 	}
 	return queue
 }
@@ -86,29 +86,40 @@ func restartQueue( force bool) int{
 	}
 	//run script to restart container
 	//check if a container is alive
-	queue = MakeQueue(queue.API_CONN_OPTIONS, queue.SSH_SERV_CONN_OPTIONS)
+	MakeQueue(queue.API_CONN_OPTIONS, queue.SSH_SERV_CONN_OPTIONS)
 
 	return QUEUE_RESTART_SUCCESSFUL
 
 }
 
-
 func EmptyQueue()error{
 	return queue.SSH_SERV_CLI.Del("*").Err()
 }
 
-func AddRequestToQueue( key string, value Queue_Request)error{
-	//update queue inside Queue object
-	return queue.API_CLI.Set(key, value, TTL).Err()
+func AddRequestToQueue( key string, request Queue_Request)error{
+    json_byte_request, err := json.Marshal(request)
+	if err != nil{
+		return err
+	}
+	return queue.API_CLI.Set(key, json_byte_request, TTL).Err()
 }
 
 func RemoveRequestFromQueue( key string) error{
-	//update queue inside Queue object
 	return  queue.API_CLI.Del(key).Err()
 }
 
-func GetRequestFromQueue( key string)string {
-	return queue.SSH_SERV_CLI.Get(key).String()
+func GetRequestFromQueue( key string)(Queue_Request, error) {
+
+	json_byte_request, err := queue.SSH_SERV_CLI.Get(key).Bytes()
+	if err != nil{
+		return Queue_Request{}, err
+	}
+	var request Queue_Request
+	err = json.Unmarshal([]byte(json_byte_request), &request)
+	if err != nil {
+		return Queue_Request{}, err
+	}
+	return request, err
 }
 
 func GetNextRequestInLine(){

@@ -14,7 +14,7 @@ import (
 
 func main(){
 
-	queue := q.MakeQueue(&redis.Options{ 
+	q.MakeQueue(&redis.Options{ 
 		Addr: "localhost:6379", 
 		Password: "", 
 		 DB: 0, 
@@ -23,12 +23,19 @@ func main(){
 	Password: "", 
 	 DB: 0, 
 } )
-	q.AddRequestToQueue(queue, "test9", q.Queue_Request{NAME: "sabash", 
+	err := q.AddRequestToQueue( "test94", q.Queue_Request{NAME: "sabash", 
 	EMAIL: "sabutdana@gmail.com",
 	CURRENT_IP: "mei nahi bataonga",
 	LOCATION: "jhadio k peeche",
 	CREATED_AT: "cake murder day", 
 	LASTSEEN:"don ko dhundna mushkil hi nahi namumkin hai"})
-	fmt.Println(q.GetRequestFromQueue(queue, "test9"))
+	
+	if err != nil{
+		fmt.Println(err)
+	}
+
+	fmt.Println(q.GetRequestFromQueue( "test94"))
+	fmt.Println(q.RemoveRequestFromQueue("test94"))
+	fmt.Println(q.GetRequestFromQueue( "test94"))
 
 }

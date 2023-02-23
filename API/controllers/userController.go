@@ -40,6 +40,14 @@ func VerifyPassword(userPassword string, providedPassword string) (bool, string)
 
 	return check, msg
 }
+
+func GetApps() gin.HandlerFunc {
+	return func(c *gin.Context) {
+		Apps := []string{"App 1", "App 2", "App 3"}
+		c.IndentedJSON(http.StatusOK, Apps)
+	}
+}
+
 func SignUp() gin.HandlerFunc {
 	return func(c *gin.Context) {
 		var ctx, cancel = context.WithTimeout(context.Background(), 100*time.Second)

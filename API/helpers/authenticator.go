@@ -2,6 +2,7 @@ package helpers
 
 import (
 	"fmt"
+	"log"
 	"net/http"
 
 	"github.com/gin-gonic/gin"
@@ -17,7 +18,8 @@ func Authentication() gin.HandlerFunc {
 		}
 		claims, err := ValidateToken(clientToken)
 		if err != "" {
-			c.JSON(http.StatusUnauthorized, gin.H{"error": err})
+			log.Printf("Error Validating token %v", err)
+			c.JSON(http.StatusUnauthorized, "Unauthorized")
 			c.Abort()
 			return
 		}

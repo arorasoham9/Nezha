@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"log"
 	"os"
+	"strconv"
 	"time"
 
 	//"user-athentication-golang/database"
@@ -24,16 +25,19 @@ var SECRET_KEY string = os.Getenv("SECRET_KEY")
 
 // GenerateAllTokens generates both the detailed token and refresh token
 func GenerateAllTokens(email string) (signedToken string, signedRefreshToken string, err error) {
+	// TODO: Extract env var logic into helper Setting defaults if not present.
+	tokenDuration, _ := strconv.ParseInt(os.Getenv("TOKEN_DURATION"), 10, 64)
+	refreshTokenDuration, _ := strconv.ParseInt(os.Getenv("REFRESH_TOKEN_DURATION"), 10, 64)
 	claims := &SignedDetails{
 		Email: email,
 		StandardClaims: jwt.StandardClaims{
-			ExpiresAt: time.Now().Local().Add(time.Hour * time.Duration(24)).Unix(),
+			ExpiresAt: time.Now().Local().Add(time.Hour * time.Duration(tokenDuration)).Unix(),
 		},
 	}
 
 	refreshClaims := &SignedDetails{
 		StandardClaims: jwt.StandardClaims{
-			ExpiresAt: time.Now().Local().Add(time.Hour * time.Duration(168)).Unix(),
+			ExpiresAt: time.Now().Local().Add(time.Hour * time.Duration(refreshTokenDuration)).Unix(),
 		},
 	}
 

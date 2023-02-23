@@ -8,6 +8,7 @@ import (
 	"time"
 
 	"github.com/arorasoham9/ECE49595_PROJECT/API/database"
+	"github.com/arorasoham9/ECE49595_PROJECT/API/helpers"
 	"github.com/arorasoham9/ECE49595_PROJECT/API/models"
 	"github.com/gin-gonic/gin"
 	"github.com/go-playground/validator/v10"
@@ -89,9 +90,32 @@ func SignUp() gin.HandlerFunc {
 
 func Login() gin.HandlerFunc {
 	return func(c *gin.Context) {
-		//var ctx, cancel = context.WithTimeout(context.Background(), 100*time.Second)
-		//var user models.User
-		//var foundUser models.User
-		fmt.Println("%+v", c)
+
+		var user models.User
+		var foundUser models.User
+
+		if err := c.BindJSON(&user); err != nil {
+			c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+			return
+		}
+		log.Printf("Attempted login user %v", *user.Email)
+
+		var ctx, cancel = context.WithTimeout(context.Background(), 100*time.Second)
+
+		err := userCollection.FindOne(ctx, bson.M{"email": user.Email}).Decode(&foundUser)
+		defer cancel()
+		if err != nil {
+			c.JSON(http.StatusUnauthorized, gin.H{"error": "login or passowrd is incorrect"})
+			log.Printf("Invalid user: %v", *user.Email)
+			return
+		}
+
+		token, _, err := helpers.GenerateAllTokens(*foundUser.Email) // TODO: Return refresh token.
+
+		if err != nil {
+			c.JSON(http.StatusInternalServerError, gin.H{"error": "Issue with JWT token creation"})
+		}
+
+		c.JSON(http.StatusOK, token)
 	}
 }

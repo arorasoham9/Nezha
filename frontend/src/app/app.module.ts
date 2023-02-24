@@ -3,29 +3,34 @@ import { BrowserModule } from '@angular/platform-browser';
 
 import { AppRoutingModule } from './app-routing.module';
 import { AppComponent } from './app.component';
-import { LoginPageComponent } from './login-page/login-page.component';
-import { LandingPageComponent } from './landing-page/landing-page.component';
-import { MatSidenavModule} from '@angular/material/sidenav';
-import { BrowserAnimationsModule } from '@angular/platform-browser/animations';
-import {SocialLoginModule, SocialAuthServiceConfig} from 'angularx-social-login'
-import { GoogleLoginProvider } from 'angularx-social-login';
-import { ReactiveFormsModule } from '@angular/forms';
-
+import {SocialLoginModule, SocialAuthServiceConfig } from '@abacritt/angularx-social-login'
+import {
+  GoogleLoginProvider
+} from '@abacritt/angularx-social-login'
 @NgModule({
   declarations: [
-    AppComponent,
-    LoginPageComponent,
-    LandingPageComponent
+    AppComponent
   ],
   imports: [
     BrowserModule,
     AppRoutingModule,
-    BrowserAnimationsModule,
-    MatSidenavModule,
-    ReactiveFormsModule,
     SocialLoginModule
   ],
   providers: [
+    {
+      provide: 'SocialAuthServiceConfig',
+      useValue: {
+        autoLogin: false,
+        providers: [
+          {
+            id: GoogleLoginProvider.PROVIDER_ID,
+            provider: new GoogleLoginProvider(
+              'clientId'
+            )
+          }
+        ]
+      } as SocialAuthServiceConfig,
+    }
   ],
   bootstrap: [AppComponent]
 })

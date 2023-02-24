@@ -1,10 +1,5 @@
-import { Component, OnInit} from '@angular/core';
-import { FormBuilder, FormGroup, Validators } from '@angular/forms';
-import {
-  SocialAuthService,
-  GoogleLoginProvider,
-  SocialUser,
-} from 'angularx-social-login';
+import { GoogleLoginProvider, SocialAuthService } from '@abacritt/angularx-social-login';
+import { Component } from '@angular/core';
 
 @Component({
   selector: 'app-root',
@@ -12,5 +7,15 @@ import {
   styleUrls: ['./app.component.css']
 })
 export class AppComponent {
-  title = "frontend";
+  title = 'frontend';
+
+  constructor(private authService: SocialAuthService) {}
+
+  signInWithGoogle(): void {
+    this.authService.signIn(GoogleLoginProvider.PROVIDER_ID);
+  }
+
+  signOut(): void {
+    this.authService.signOut();
+  }
 }

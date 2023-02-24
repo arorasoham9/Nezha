@@ -9,9 +9,7 @@ import (
 
 	//"user-athentication-golang/database"
 
-	"github.com/arorasoham9/ECE49595_PROJECT/API/database"
 	jwt "github.com/dgrijalva/jwt-go"
-	"go.mongodb.org/mongo-driver/mongo"
 )
 
 type SignedDetails struct {
@@ -19,7 +17,7 @@ type SignedDetails struct {
 	jwt.StandardClaims
 }
 
-var userCollection *mongo.Collection = database.OpenCollection(database.Client, "user")
+//var userCollection *mongo.Collection = database.OpenCollection(database.Client, "user")
 
 var SECRET_KEY string = os.Getenv("SECRET_KEY")
 

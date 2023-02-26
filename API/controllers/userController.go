@@ -1,22 +1,20 @@
 package controllers
 
 import (
-	"context"
 	"fmt"
 	"log"
 	"net/http"
-	"time"
 
 	"github.com/arorasoham9/ECE49595_PROJECT/API/database"
 	"github.com/arorasoham9/ECE49595_PROJECT/API/helpers"
 	"github.com/arorasoham9/ECE49595_PROJECT/API/models"
 	"github.com/gin-gonic/gin"
 	"github.com/go-playground/validator/v10"
-	"go.mongodb.org/mongo-driver/bson"
-	"go.mongodb.org/mongo-driver/mongo"
 )
 
-var userCollection *mongo.Collection = database.OpenCollection(database.Client, "users")
+var db = database.DatabaseModule{}
+
+// var userCollection *mongo.Collection = database.OpenCollection(database.Client, "users")
 var validate = validator.New()
 
 func GetApps() gin.HandlerFunc {
@@ -35,15 +33,15 @@ func SignUp() gin.HandlerFunc {
 			c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 			return
 		}
-		var ctx, cancel = context.WithTimeout(context.Background(), 100*time.Second)
+		//var ctx, cancel = context.WithTimeout(context.Background(), 100*time.Second)
 		validationErr := validate.Struct(user)
-		defer cancel()
+
 		if validationErr != nil {
 			c.JSON(http.StatusBadRequest, gin.H{"error": validationErr.Error()})
 			return
 		}
-		count, err := userCollection.CountDocuments(ctx, bson.M{"email": user.Email})
-		defer cancel()
+		count, err := db.GetEmailCount("users", *user.Email)
+		//count, err := userCollection.CountDocuments(ctx, bson.M{"email": user.Email})
 		if err != nil {
 			log.Panic(err)
 			return
@@ -77,10 +75,8 @@ func Login() gin.HandlerFunc {
 		}
 		log.Printf("Attempted login user %v", *user.Email)
 
-		var ctx, cancel = context.WithTimeout(context.Background(), 100*time.Second)
-
-		err := userCollection.FindOne(ctx, bson.M{"email": user.Email}).Decode(&foundUser)
-		defer cancel()
+		res := db.FindEmail("users", *user.Email)
+		err := res.Decode(&foundUser)
 		if err != nil {
 			c.JSON(http.StatusUnauthorized, gin.H{"error": "login or passowrd is incorrect"})
 			log.Printf("Invalid user: %v", *user.Email)

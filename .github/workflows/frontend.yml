@@ -20,5 +20,5 @@ jobs:
         run: npm ci
       
       - name: Build
-        working-directory: frotend
+        working-directory: frontend
         run: npm run build

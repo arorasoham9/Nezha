@@ -8,8 +8,6 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@v3
-        with:
-          working-directory: frontend
 
       - name: Set up node.js
         uses: actions/setup-node@v3.3.0

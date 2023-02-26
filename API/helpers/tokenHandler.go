@@ -3,8 +3,6 @@ package helpers
 import (
 	"fmt"
 	"log"
-	"os"
-	"strconv"
 	"time"
 
 	//"user-athentication-golang/database"
@@ -19,13 +17,13 @@ type SignedDetails struct {
 
 //var userCollection *mongo.Collection = database.OpenCollection(database.Client, "user")
 
-var SECRET_KEY string = os.Getenv("SECRET_KEY")
+var SECRET_KEY string = GetSecretKey()
 
 // GenerateAllTokens generates both the detailed token and refresh token
 func GenerateAllTokens(email string) (signedToken string, signedRefreshToken string, err error) {
 	// TODO: Extract env var logic into helper Setting defaults if not present.
-	tokenDuration, _ := strconv.ParseInt(os.Getenv("TOKEN_DURATION"), 10, 64)
-	refreshTokenDuration, _ := strconv.ParseInt(os.Getenv("REFRESH_TOKEN_DURATION"), 10, 64)
+	tokenDuration := GetTokenDuration()
+	refreshTokenDuration := GetRefreshTokenDuration()
 	claims := &SignedDetails{
 		Email: email,
 		StandardClaims: jwt.StandardClaims{

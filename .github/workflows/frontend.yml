@@ -1,4 +1,4 @@
-name: CI / CD for Angular
+name: Build and test frontend
 on:
   push:
     branches: [ "main" ]

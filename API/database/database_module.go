@@ -43,3 +43,11 @@ func (d DatabaseModule) FindEmail(collectionName string, email string) *mongo.Si
 	res := userCollection.FindOne(ctx, bson.M{"email": email})
 	return res
 }
+
+func (d DatabaseModule) AddUser(email string) {
+	return
+}
+
+func (d DatabaseModule) CreateCollection(collectionName string) {
+	return
+}

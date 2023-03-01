@@ -65,7 +65,7 @@ func Login() gin.HandlerFunc {
 		}
 		log.Printf("Attempted login user %v", *user.Email)
 
-		foundUser, err := db.FindUser("users", *user.Email)
+		foundUser, err := db.FindUserByEmail("users", *user.Email)
 		if err != nil {
 			c.JSON(http.StatusUnauthorized, gin.H{"error": "login or passowrd is incorrect"})
 			log.Printf("Invalid user: %v", *user.Email)

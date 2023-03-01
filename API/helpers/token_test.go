@@ -14,6 +14,7 @@ func assertEquals(t *testing.T, desc string, got interface{}, want interface{}) 
 func TestInvalidToken(t *testing.T) {
 	os.Setenv("SECRET_KEY", "SECRET_KEY")
 	token := "gibberish"
+	os.Setenv("SECRET_KEY", "SECRET_KEY")
 	_, err := ValidateToken(token)
 
 	if err == "" {

@@ -1,3 +1,5 @@
+// Package helpers implements different helper functions used in other areas of the project
+// helpers/environemnt_handler.go impelements handlers used to interact with env vars.
 package helpers
 
 import (
@@ -6,11 +8,23 @@ import (
 	"strconv"
 )
 
+// checkExist returns a Go string and bool representing the environment variable and whether it was found
 func checkExist(varName string) (string, bool) {
 	envVar, found := os.LookupEnv(varName)
 	return envVar, found
 }
 
+// GetPort returns a Go string that represents the PORT that will be set up for the API
+// It's default value is 8000
+func GetPort() string {
+	port, found := checkExist("PORT")
+	if !found {
+		port = "8000"
+	}
+	return port
+}
+
+// GetSecretKey returns a Go String that represents the SECRET_KEY used in JWT enconding
 func GetSecretKey() string {
 	SECRET_KEY, found := checkExist("SECRET_KEY")
 	if !found {
@@ -19,6 +33,7 @@ func GetSecretKey() string {
 	return SECRET_KEY
 }
 
+// GetTokenDuration returns a Go int64 that represents how long the original token should last
 func GetTokenDuration() int64 {
 	duration := int64(24)
 	durationS, found := checkExist("TOKEN_DURATION")
@@ -31,6 +46,7 @@ func GetTokenDuration() int64 {
 	return duration
 }
 
+// GetRefreshTokenDuration returns a go int64 that represents how long the refresh token should last
 func GetRefreshTokenDuration() int64 {
 	duration := int64(196)
 	durationS, found := checkExist("REFRESH_TOKEN_DURATION")
@@ -43,6 +59,7 @@ func GetRefreshTokenDuration() int64 {
 	return duration
 }
 
+// GetMongoURL returns a Go string representing the URL for connecting to the MongoDB
 func GetMongoURL() string {
 	MongoDb, found := checkExist("MONGODB_URL")
 	if !found {

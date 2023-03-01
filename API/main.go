@@ -1,15 +1,13 @@
 package main
 
 import (
-	"os"
-
+	"github.com/arorasoham9/ECE49595_PROJECT/API/helpers"
 	"github.com/arorasoham9/ECE49595_PROJECT/API/routes"
 	"github.com/gin-gonic/gin"
 )
 
 func main() {
-	port := os.Getenv("PORT")
-
+	port := helpers.GetPort()
 	if port == "" {
 		port = "8000"
 	}

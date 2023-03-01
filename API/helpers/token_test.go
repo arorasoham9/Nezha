@@ -1,6 +1,9 @@
 package helpers
 
-import "testing"
+import (
+	"os"
+	"testing"
+)
 
 func assertEquals(t *testing.T, desc string, got interface{}, want interface{}) {
 	if got != want {
@@ -10,6 +13,7 @@ func assertEquals(t *testing.T, desc string, got interface{}, want interface{}) 
 
 func TestInvalidToken(t *testing.T) {
 	token := "gibberish"
+	os.Setenv("SECRET_KEY", "SECRET_KEY")
 	_, err := ValidateToken(token)
 
 	if err == "" {

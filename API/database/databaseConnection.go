@@ -12,6 +12,8 @@ import (
 	"go.mongodb.org/mongo-driver/mongo/options"
 )
 
+// Function name inputs/outputs/basic description
+
 func DBinstance() *mongo.Client {
 	err := godotenv.Load(".env")
 
@@ -41,9 +43,9 @@ func DBinstance() *mongo.Client {
 
 var Client *mongo.Client = DBinstance()
 
-// DELETE?
+/*
 func OpenCollection(client *mongo.Client, collectionName string) *mongo.Collection {
 	var collection *mongo.Collection = client.Database("test").Collection(collectionName)
 
 	return collection
-}
+} */

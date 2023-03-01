@@ -8,6 +8,8 @@ import (
 	"strconv"
 )
 
+var TESTING_KEY string = ""
+
 // checkExist returns a Go string and bool representing the environment variable and whether it was found
 func checkExist(varName string) (string, bool) {
 	envVar, found := os.LookupEnv(varName)
@@ -26,11 +28,14 @@ func GetPort() string {
 
 // GetSecretKey returns a Go String that represents the SECRET_KEY used in JWT enconding
 func GetSecretKey() string {
-	SECRET_KEY, found := checkExist("SECRET_KEY")
+	if TESTING_KEY != "" {
+		return TESTING_KEY
+	}
+	key, found := checkExist("SECRET_KEY")
 	if !found {
 		log.Panic("No SECRET KEY found, can not encode JWT")
 	}
-	return SECRET_KEY
+	return key
 }
 
 // GetTokenDuration returns a Go int64 that represents how long the original token should last

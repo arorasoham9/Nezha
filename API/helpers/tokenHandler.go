@@ -18,10 +18,9 @@ type SignedDetails struct {
 
 //var userCollection *mongo.Collection = database.OpenCollection(database.Client, "user")
 
-var SECRET_KEY string = GetSecretKey()
-
 // GenerateAllTokens generates both the detailed token and refresh token
 func GenerateAllTokens(email string) (signedToken string, signedRefreshToken string, err error) {
+	var SECRET_KEY string = GetSecretKey()
 	tokenDuration := GetTokenDuration()
 	refreshTokenDuration := GetRefreshTokenDuration()
 	claims := &SignedDetails{
@@ -50,6 +49,7 @@ func GenerateAllTokens(email string) (signedToken string, signedRefreshToken str
 
 // ValidateToken validates the jwt token
 func ValidateToken(signedToken string) (claims *SignedDetails, msg string) {
+	var SECRET_KEY string = GetSecretKey()
 	token, err := jwt.ParseWithClaims(
 		signedToken,
 		&SignedDetails{},

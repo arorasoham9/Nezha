@@ -1,7 +1,6 @@
 package helpers
 
 import (
-	"os"
 	"testing"
 )
 
@@ -12,7 +11,7 @@ func assertEquals(t *testing.T, desc string, got interface{}, want interface{}) 
 }
 
 func TestInvalidToken(t *testing.T) {
-	os.Setenv("SECRET_KEY", "SECRET_KEY")
+	TESTING_KEY = "TESTING"
 	token := "gibberish"
 	_, err := ValidateToken(token)
 

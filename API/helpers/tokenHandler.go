@@ -3,8 +3,6 @@ package helpers
 import (
 	"fmt"
 	"log"
-	"os"
-	"strconv"
 	"time"
 
 	//"user-athentication-golang/database"
@@ -12,6 +10,7 @@ import (
 	jwt "github.com/dgrijalva/jwt-go"
 )
 
+// A SignedDetails holds an email and it's encoded counterpart using JWT
 type SignedDetails struct {
 	Email string
 	jwt.StandardClaims
@@ -19,13 +18,11 @@ type SignedDetails struct {
 
 //var userCollection *mongo.Collection = database.OpenCollection(database.Client, "user")
 
-var SECRET_KEY string = os.Getenv("SECRET_KEY")
-
 // GenerateAllTokens generates both the detailed token and refresh token
 func GenerateAllTokens(email string) (signedToken string, signedRefreshToken string, err error) {
-	// TODO: Extract env var logic into helper Setting defaults if not present.
-	tokenDuration, _ := strconv.ParseInt(os.Getenv("TOKEN_DURATION"), 10, 64)
-	refreshTokenDuration, _ := strconv.ParseInt(os.Getenv("REFRESH_TOKEN_DURATION"), 10, 64)
+	var SECRET_KEY string = GetSecretKey()
+	tokenDuration := GetTokenDuration()
+	refreshTokenDuration := GetRefreshTokenDuration()
 	claims := &SignedDetails{
 		Email: email,
 		StandardClaims: jwt.StandardClaims{
@@ -52,6 +49,7 @@ func GenerateAllTokens(email string) (signedToken string, signedRefreshToken str
 
 // ValidateToken validates the jwt token
 func ValidateToken(signedToken string) (claims *SignedDetails, msg string) {
+	var SECRET_KEY string = GetSecretKey()
 	token, err := jwt.ParseWithClaims(
 		signedToken,
 		&SignedDetails{},

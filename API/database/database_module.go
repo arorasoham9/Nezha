@@ -4,6 +4,7 @@ import (
 	"context"
 	"time"
 
+	"github.com/arorasoham9/ECE49595_PROJECT/API/models"
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/mongo"
 )
@@ -19,7 +20,7 @@ func (d DatabaseModule) getClient() *mongo.Client {
 	return d.client
 }
 
-func (d DatabaseModule) OpenCollection(collectionName string) *mongo.Collection {
+func (d DatabaseModule) openCollection(collectionName string) *mongo.Collection {
 	cl := d.getClient()
 	var collection *mongo.Collection = cl.Database("test").Collection(collectionName)
 	return collection
@@ -27,7 +28,7 @@ func (d DatabaseModule) OpenCollection(collectionName string) *mongo.Collection 
 
 func (d DatabaseModule) GetEmailCount(collectionName string, email string) (int64, error) {
 	var ctx, cancel = context.WithTimeout(context.Background(), 100*time.Second)
-	userCollection := d.OpenCollection(collectionName)
+	userCollection := d.openCollection(collectionName)
 	count, err := userCollection.CountDocuments(ctx, bson.M{"email": email})
 	defer cancel()
 	if err != nil {
@@ -36,12 +37,14 @@ func (d DatabaseModule) GetEmailCount(collectionName string, email string) (int6
 	return count, err
 }
 
-func (d DatabaseModule) FindEmail(collectionName string, email string) *mongo.SingleResult {
+func (d DatabaseModule) FindUser(collectionName string, email string) (models.User, error) {
 	var ctx, cancel = context.WithTimeout(context.Background(), 100*time.Second)
-	userCollection := d.OpenCollection(collectionName)
+	userCollection := d.openCollection(collectionName)
 	defer cancel()
 	res := userCollection.FindOne(ctx, bson.M{"email": email})
-	return res
+	var foundUser models.User
+	err := res.Decode(&foundUser)
+	return foundUser, err
 }
 
 func (d DatabaseModule) AddUser(email string) {

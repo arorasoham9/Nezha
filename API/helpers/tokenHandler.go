@@ -10,6 +10,7 @@ import (
 	jwt "github.com/dgrijalva/jwt-go"
 )
 
+// A SignedDetails holds an email and it's encoded counterpart using JWT
 type SignedDetails struct {
 	Email string
 	jwt.StandardClaims
@@ -21,7 +22,6 @@ var SECRET_KEY string = GetSecretKey()
 
 // GenerateAllTokens generates both the detailed token and refresh token
 func GenerateAllTokens(email string) (signedToken string, signedRefreshToken string, err error) {
-	// TODO: Extract env var logic into helper Setting defaults if not present.
 	tokenDuration := GetTokenDuration()
 	refreshTokenDuration := GetRefreshTokenDuration()
 	claims := &SignedDetails{

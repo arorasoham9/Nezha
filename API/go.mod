@@ -27,6 +27,7 @@ require (
 )
 
 require (
+	github.com/gin-contrib/cors v1.4.0
 	github.com/gin-gonic/gin v1.8.2
 	github.com/go-playground/validator/v10 v10.11.2
 	github.com/golang/snappy v0.0.1 // indirect

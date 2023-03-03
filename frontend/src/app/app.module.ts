@@ -8,7 +8,6 @@ import { SocialLoginModule, SocialAuthServiceConfig } from '@abacritt/angularx-s
 import {
   GoogleLoginProvider,
 } from '@abacritt/angularx-social-login';
-import { BASE_PATH } from 'api-handler';
 
 @NgModule({
   declarations: [
@@ -37,8 +36,7 @@ import { BASE_PATH } from 'api-handler';
           console.error(err);
         }
       } as SocialAuthServiceConfig,
-    },
-    {provide: BASE_PATH, useValue: "http://localhost:8000"}
+    }
   ],
   bootstrap: [AppComponent]
 })

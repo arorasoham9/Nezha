@@ -3,11 +3,12 @@ import { BrowserModule } from '@angular/platform-browser';
 
 import { AppRoutingModule } from './app-routing.module';
 import { AppComponent } from './app.component';
-
+import { HttpClientModule } from '@angular/common/http';
 import { SocialLoginModule, SocialAuthServiceConfig } from '@abacritt/angularx-social-login';
 import {
   GoogleLoginProvider,
 } from '@abacritt/angularx-social-login';
+import { BASE_PATH } from 'api-handler';
 
 @NgModule({
   declarations: [
@@ -16,7 +17,8 @@ import {
   imports: [
     BrowserModule,
     AppRoutingModule,
-    SocialLoginModule
+    SocialLoginModule,
+    HttpClientModule
   ],
   providers: [
     {
@@ -35,7 +37,8 @@ import {
           console.error(err);
         }
       } as SocialAuthServiceConfig,
-    }
+    },
+    {provide: BASE_PATH, useValue: "http://localhost:8000"}
   ],
   bootstrap: [AppComponent]
 })

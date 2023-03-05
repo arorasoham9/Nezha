@@ -10,6 +10,8 @@ import { AppsService, AuthenticationService, OpenAPI } from 'generated';
 export class AppComponent implements OnInit {
   title = 'frontend';
   user: SocialUser;
+  loggedIn: boolean;
+  appList: Array<String>;
 
   constructor(private authService: SocialAuthService, private apiAuthService: AuthenticationService, private appService: AppsService ) { 
   }
@@ -17,6 +19,8 @@ export class AppComponent implements OnInit {
   ngOnInit(): void {
     this.authService.authState.subscribe((user) => {
       this.user = user;
+      this.loggedIn = (user != null)
+      this.getToken()
     }) 
   }
 
@@ -33,7 +37,8 @@ export class AppComponent implements OnInit {
       OpenAPI.HEADERS = {"token": body};
       console.log(body)
       this.appService.getApps().subscribe(appList=>{
-        console.log(appList)
+        this.appList = appList;
+        console.log(this.appList)
       })
     })
   }

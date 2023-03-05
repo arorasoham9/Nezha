@@ -1,2 +1,15 @@
-<asl-google-signin-button type='icon' size='medium'></asl-google-signin-button>
-<button (click)="getToken()">Get Token</button>
+
+<!--<button (click)="getToken()">Get Token</button>-->
+<div *ngIf="!loggedIn">Not Logged in please authenticate with google
+    <asl-google-signin-button type='icon' size='medium'></asl-google-signin-button>
+</div>
+<div *ngIf="appList">
+    <mat-card *ngFor="let app of appList">
+    <mat-card-header>
+      <mat-card-title>{{app}}</mat-card-title>
+      <mat-card-subtitle>App subtitlte</mat-card-subtitle>
+    </mat-card-header>
+    <mat-card-actions>
+      <button mat-button>Open Connection</button>
+    </mat-card-actions>
+  </mat-card></div>

@@ -31,6 +31,16 @@ func (d DatabaseModule) openCollection(collectionName string) *mongo.Collection 
 	return collection
 }
 
+func (d DatabaseModule) GetApps(collectionName string, email string) ([]*string, error) {
+	var ctx, cancel = context.WithTimeout(context.Background(), 100*time.Second)
+	appCollection := d.openCollection(collectionName)
+	defer cancel()
+	res := appCollection.FindOne(ctx, bson.M{"email": email})
+	var foundApps models.AppList
+	err := res.Decode(&foundApps)
+	return foundApps.Apps, err
+}
+
 // GetEmailCount returns int64,error, the int represents the count of a certain email, and error if there was an error counting documents
 // This function may become deprecated soon, was mainly used for testing and setting up API code.
 func (d DatabaseModule) GetEmailCount(collectionName string, email string) (int64, error) {

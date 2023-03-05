@@ -19,8 +19,12 @@ var validate = validator.New()
 
 func GetApps() gin.HandlerFunc {
 	return func(c *gin.Context) {
-		Apps := []string{"App 1", "App 2", "App 3"}
-		c.IndentedJSON(http.StatusOK, Apps)
+		email := c.GetString("email")
+		fmt.Println(email)
+		appList, _ := db.GetApps("apps", email)
+
+		//Apps := []string{"App 1", "App 2", "App 3"}
+		c.IndentedJSON(http.StatusOK, appList)
 	}
 }
 

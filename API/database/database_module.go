@@ -3,12 +3,15 @@ package database
 
 import (
 	"context"
+	"fmt"
 	"log"
 	"time"
 
+	"github.com/arorasoham9/ECE49595_PROJECT/API/helpers"
 	"github.com/arorasoham9/ECE49595_PROJECT/API/models"
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/mongo"
+	"go.mongodb.org/mongo-driver/mongo/options"
 )
 
 // DatabaseModule represents a struct that holds a mongoClient allowing for Collection and Database access with extra error handling.
@@ -31,6 +34,8 @@ func (d DatabaseModule) openCollection(collectionName string) *mongo.Collection 
 	return collection
 }
 
+// getApps returns a Go Array of Strings and an error
+// The function checks the database for a set of apps that a particular user has access too.
 func (d DatabaseModule) GetApps(email string) ([]*string, error) {
 	var ctx, cancel = context.WithTimeout(context.Background(), 100*time.Second)
 	appCollection := d.openCollection("apps")
@@ -84,4 +89,25 @@ func (d DatabaseModule) openDatabse(dbname string) *mongo.Database {
 // CreateCollection
 func (d DatabaseModule) CreateCollection(collectionName string) {
 	return
+}
+
+func DBinstance() *mongo.Client {
+	MongoDb := helpers.GetMongoURL()
+
+	client, err := mongo.NewClient(options.Client().ApplyURI(MongoDb))
+
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
+
+	defer cancel()
+	err = client.Connect(ctx)
+	if err != nil {
+		log.Fatal(err)
+	}
+	fmt.Println("Connected to MongoDB") // TODO: Change to log
+
+	return client
 }

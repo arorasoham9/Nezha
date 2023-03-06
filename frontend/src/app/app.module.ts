@@ -10,6 +10,7 @@ import {
 } from '@abacritt/angularx-social-login';
 import { BrowserAnimationsModule } from '@angular/platform-browser/animations';
 import { MatCardModule } from '@angular/material/card'
+import { MatButtonModule } from '@angular/material/button'
 
 @NgModule({
   declarations: [
@@ -21,7 +22,8 @@ import { MatCardModule } from '@angular/material/card'
     SocialLoginModule,
     HttpClientModule,
     BrowserAnimationsModule,
-    MatCardModule
+    MatCardModule,
+    MatButtonModule
   ],
   providers: [
     {

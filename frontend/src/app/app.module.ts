@@ -8,6 +8,9 @@ import { SocialLoginModule, SocialAuthServiceConfig } from '@abacritt/angularx-s
 import {
   GoogleLoginProvider,
 } from '@abacritt/angularx-social-login';
+import { BrowserAnimationsModule } from '@angular/platform-browser/animations';
+import { MatCardModule } from '@angular/material/card'
+import { MatButtonModule } from '@angular/material/button'
 
 @NgModule({
   declarations: [
@@ -17,7 +20,10 @@ import {
     BrowserModule,
     AppRoutingModule,
     SocialLoginModule,
-    HttpClientModule
+    HttpClientModule,
+    BrowserAnimationsModule,
+    MatCardModule,
+    MatButtonModule
   ],
   providers: [
     {

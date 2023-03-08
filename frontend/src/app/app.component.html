@@ -7,9 +7,9 @@
     <mat-card *ngFor="let app of appList" style="margin:20px">
     <mat-card-header>
       <mat-card-title>{{app}}</mat-card-title>
-      <mat-card-subtitle>App subtitlte</mat-card-subtitle>
+      <mat-card-subtitle>Description of {{app}}</mat-card-subtitle>
     </mat-card-header>
     <mat-card-actions>
-      <button mat-raised-button color="primary">Open Connection</button>
+      <a mat-raised-button color="primary" href="http://localhost:2222/ssh/host/{{app}}" target="_blank">Open Connection</a>
     </mat-card-actions>
   </mat-card></div>

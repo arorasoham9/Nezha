@@ -1,15 +1,8 @@
 # ECE 49595OSS Project
-Our idea revolves around the use of new-age technologies and Identity proxy methods to grant
-access to users and engineers to their applications. Unlike using VPNs which grant access to a
-LAN once verified, using Zero Trust Network Access is a technology we plan to use in our idea
-to offer limited access to only users who have been approved. ZTNA provides a “never trust,
-always verify” least-privilege approach. In this approach, the application is not exposed to the
-internet or does not exist on the global subnet but only when a user is authenticated, a pipeline
-is opened to the application to offer user-specific, restricted, and access to the user. In
-conclusion, our idea offers an Identity-based identification and access control instead of
-IP-based access control.
+A Zero Trust Network Access, “never trust, always verify”, proxy  that offers limited application and server access to only users who have been explicitly approved. The client application is not exposed to the internet and does not exist on the global subnet. Only when a user is authenticated with Google and authorized with the proxy, a pipeline is opened to the application to offer user-specific, restricted access to the application. 
 
 ## Status
+The repository is a work in progress. The following have been implemented: 
 - UI: Frontend v0.1
   - List Screen
   - Google Auth

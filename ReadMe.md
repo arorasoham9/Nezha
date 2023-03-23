@@ -12,7 +12,10 @@ The repository is a work in progress. The following have been implemented:
   - /users/getApps (returns list of accessible apps for user, requires JWT token)
   - /users/login (returns JWT token in string format of authorized user)
 - Integrated end-2-end
-  
+
+## Upcoming Features
+- Admin API endpoints
+- UI: Frontend v1.0
 
 ## Environment Variables
 |Variable Name|Variable Description|Default Value|

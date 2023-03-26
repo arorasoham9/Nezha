@@ -43,6 +43,9 @@ func (d DatabaseModule) GetApps(email string) ([]*string, error) {
 	res := appCollection.FindOne(ctx, bson.M{"email": email})
 	var foundApps models.AppList
 	err := res.Decode(&foundApps)
+	if err != nil {
+		fmt.Printf("%v", err)
+	}
 	return foundApps.Apps, err
 }
 

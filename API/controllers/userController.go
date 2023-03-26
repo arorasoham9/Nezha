@@ -1,6 +1,7 @@
 package controllers
 
 import (
+	"context"
 	"fmt"
 	"log"
 	"net/http"
@@ -10,6 +11,7 @@ import (
 	"github.com/arorasoham9/ECE49595_PROJECT/API/models"
 	"github.com/gin-gonic/gin"
 	"github.com/go-playground/validator/v10"
+	"google.golang.org/api/idtoken"
 )
 
 var db = database.DatabaseModule{}
@@ -17,6 +19,7 @@ var db = database.DatabaseModule{}
 // var userCollection *mongo.Collection = database.OpenCollection(database.Client, "users")
 var validate = validator.New()
 
+// Rewrite to get email correctly from context
 func GetApps() gin.HandlerFunc {
 	return func(c *gin.Context) {
 		email := c.GetString("email")
@@ -66,9 +69,19 @@ func Login() gin.HandlerFunc {
 			c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 			return
 		}
-		log.Printf("Attempted login user %v", *user.Email)
 
-		foundUser, err := db.FindUserByEmail("users", *user.Email)
+		clientID := "688933920583-vojm3og1kndonhvo6icej2r2q8a0la8b.apps.googleusercontent.com"
+
+		payload, err := idtoken.Validate(context.Background(), *user.Token, clientID)
+		if err != nil {
+			panic(err)
+		}
+		fmt.Print(payload.Claims["email"])
+		claims := payload.Claims
+		email := fmt.Sprintf("%v", claims["email"])
+		log.Printf("Attempted login user %v", email)
+
+		foundUser, err = db.FindUserByEmail("users", email)
 		if err != nil {
 			c.JSON(http.StatusUnauthorized, gin.H{"error": "login or passowrd is incorrect"})
 			log.Printf("Invalid user: %v", *user.Email)

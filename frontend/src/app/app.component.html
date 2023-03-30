@@ -3,7 +3,10 @@
 <div *ngIf="!loggedIn">Not Logged in please authenticate with google
     <asl-google-signin-button type='standard' size='large' widht="300px"></asl-google-signin-button>
 </div>
-<div *ngIf="loggedIn">
+<div *ngIf="loggedIn && loading">
+  <h1>Loading</h1>
+</div>
+<div *ngIf="loggedIn && !loading">
   <div *ngIf="appList">
     <mat-card *ngFor="let app of appList" style="margin:20px">
     <mat-card-header>

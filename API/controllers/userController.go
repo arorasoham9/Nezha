@@ -96,6 +96,6 @@ func Login() gin.HandlerFunc {
 			c.JSON(http.StatusInternalServerError, gin.H{"error": "Issue with JWT token creation"})
 		}
 
-		c.JSON(http.StatusOK, token)
+		c.JSON(http.StatusOK, gin.H{"Token": token})
 	}
 }

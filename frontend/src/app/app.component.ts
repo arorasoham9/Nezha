@@ -12,6 +12,7 @@ export class AppComponent implements OnInit {
   user: SocialUser;
   loggedIn: boolean;
   appList: Array<String>;
+  private accessToken = '';
 
   constructor(private authService: SocialAuthService, private apiAuthService: AuthenticationService, private appService: AppsService ) { 
   }
@@ -33,7 +34,7 @@ export class AppComponent implements OnInit {
     console.log("Getting token.");
     console.log(this.user);
     OpenAPI.BASE = "http://localhost:8000"
-    this.apiAuthService.login({email: this.user.email}).subscribe(body=>{
+    this.apiAuthService.login({Token: this.user.idToken}).subscribe(body=>{
       OpenAPI.HEADERS = {"token": body};
       console.log(body)
       this.appService.getApps().subscribe(appList=>{

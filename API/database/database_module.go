@@ -44,7 +44,7 @@ func (d DatabaseModule) GetApps(email string) ([]*string, error) {
 	var foundApps models.AppList
 	err := res.Decode(&foundApps)
 	if err != nil {
-		fmt.Printf("%v", err)
+		log.Printf("%v", err)
 	}
 	return foundApps.Apps, err
 }

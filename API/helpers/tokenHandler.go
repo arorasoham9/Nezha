@@ -20,7 +20,7 @@ type SignedDetails struct {
 
 // GenerateAllTokens generates both the detailed token and refresh token
 func GenerateAllTokens(email string) (signedToken string, signedRefreshToken string, err error) {
-	fmt.Println(email)
+	//fmt.Println(email)
 	var SECRET_KEY string = GetSecretKey()
 	tokenDuration := GetTokenDuration()
 	refreshTokenDuration := GetRefreshTokenDuration()

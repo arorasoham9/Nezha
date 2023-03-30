@@ -74,9 +74,11 @@ func Login() gin.HandlerFunc {
 
 		payload, err := idtoken.Validate(context.Background(), *user.Token, clientID)
 		if err != nil {
-			panic(err)
+			log.Printf("Err %v\n", err)
+			c.JSON(http.StatusUnauthorized, gin.H{"error": "Error unauthorized."})
+			return
 		}
-		fmt.Print(payload.Claims["email"])
+		//fmt.Print(payload.Claims["email"])
 		claims := payload.Claims
 		email := fmt.Sprintf("%v", claims["email"])
 		log.Printf("Attempted login user %v", email)

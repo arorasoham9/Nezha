@@ -13,6 +13,7 @@ export class AppComponent implements OnInit {
   loggedIn: boolean;
   appList: Array<String>;
   userLogin: users_login_body;
+  loading: boolean = false;
   private accessToken = '';
 
   constructor(private authService: SocialAuthService, private apiAuthService: AuthenticationService, private appService: AppsService ) { 
@@ -34,6 +35,7 @@ export class AppComponent implements OnInit {
   getToken(): void {
     //console.log("Getting token.");
     //console.log(this.user);
+    this.loading = true;
     OpenAPI.BASE = "http://localhost:8000"
     this.apiAuthService.login({Token: this.user.idToken}).subscribe(body=>{
       this.userLogin = JSON.parse(JSON.stringify(body));
@@ -42,10 +44,12 @@ export class AppComponent implements OnInit {
         //console.log(body)
         this.appService.getApps().subscribe(appList=>{
           this.appList = appList;
+          this.loading= false;
           //console.log(this.appList)
         })
       }
     })
+
   }
 
 

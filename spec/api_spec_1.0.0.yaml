@@ -73,5 +73,5 @@ components:
     users_login_body:
       type: object
       properties:
-        email:
+        Token:
           type: string

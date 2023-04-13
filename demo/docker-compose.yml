@@ -1,0 +1,15 @@
+version: "3.9"
+services:
+  webssh2:
+    image: psharkey/webssh2
+    ports: 
+      - 2222:2222
+  app1:
+    build: .
+    hostname: application1
+  app2:
+    build: .
+    hostname: application2
+  app3:
+    build: .
+    hostname: application3

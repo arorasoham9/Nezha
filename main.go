@@ -5,15 +5,14 @@ import (
 	// b "ECE49595_PROJECT/basic"
 	// ssh "ECE49595_PROJECT/ssh"
 	q "ECE49595_PROJECT/queue"
-
+	d "ECE49595_PROJECT/dock"
 	"github.com/go-redis/redis"
 	"fmt"
 )
 
-
-
 func main(){
 
+	fmt.Println(d.CreateNewContainer("redis/redis-stack","127.0.0.1","6379","6379"))
 	q.MakeQueue(&redis.Options{ 
 		Addr: "localhost:6379", 
 		Password: "", 

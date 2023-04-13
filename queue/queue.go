@@ -56,7 +56,6 @@ func QueueIsEmpty() bool{
 		return false
 	}
 	return len(rslt) == 0
-
 }
 
 func shutDownQueue( force bool) int{
@@ -64,7 +63,6 @@ func shutDownQueue( force bool) int{
 	queue.SSH_SERV_CLI.Close()
 	//run script to restart docker container or smthing TBD, if we are running kubernetes then 
 	//it might be easier to get this to work
-
 	//check for a successful shutdown
 	shutDownCheck :=  false
 	if !shutDownCheck{
@@ -89,7 +87,6 @@ func restartQueue( force bool) int{
 	MakeQueue(queue.API_CONN_OPTIONS, queue.SSH_SERV_CONN_OPTIONS)
 
 	return QUEUE_RESTART_SUCCESSFUL
-
 }
 
 func EmptyQueue()error{

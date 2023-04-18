@@ -2,18 +2,16 @@ package queue
 
 import (
 	"fmt"
-	"os"
-
-	// "os"
 	"encoding/json"
 	"time"
-
+	d "ECE49595_PROJECT/dock"
+	"errors"
 	"github.com/go-redis/redis"
 )
 
 var queue Queue //singleton implementation
-
-func MakeQueue(api_conn_options, ssh_serv_conn_options *redis.Options) Queue {
+var Queue_container_name string
+func initQueue(api_conn_options, ssh_serv_conn_options *redis.Options) bool{
 	api_connection, err1 := makeQueueConnection(api_conn_options, API_Q_CLI)
 	ssh_serv_connection, err2 := makeQueueConnection(ssh_serv_conn_options, SSH_Q_CLI)
 
@@ -25,7 +23,24 @@ func MakeQueue(api_conn_options, ssh_serv_conn_options *redis.Options) Queue {
 		API_CONN_OPTIONS:      api_conn_options,
 		SSH_SERV_CONN_OPTIONS: ssh_serv_conn_options,
 	}
-	return queue
+	return queue.ONLINE
+}
+func MakeQueue(api_conn_options, ssh_serv_conn_options *redis.Options) error{
+	var make_err error
+	if Queue_container_name != "" {
+		d.StopOneContainer(Queue_container_name)
+		d.RemoveOneContainer(Queue_container_name)
+	}
+	Queue_container_name, make_err =  d.CreateNewContainer(QUEUE_CONTAINER_IMAGE,QUEUE_CONTAINER_MACHINE_PORT, QUEUE_CONTAINER_PORT)
+	if make_err != nil{
+		fmt.Println("Could not make queue.",make_err)
+		return make_err
+	}
+	if initQueue(api_conn_options, ssh_serv_conn_options){
+		return nil
+	}else{
+		return errors.New("Could not init queue.")
+	}
 }
 
 func makeQueueConnection(options *redis.Options, name string) (*redis.Client, error) {
@@ -34,8 +49,8 @@ func makeQueueConnection(options *redis.Options, name string) (*redis.Client, er
 	//check if a container exists
 	_, err := queueConn.Ping().Result()
 	if err != nil {
-		fmt.Println("Queue connection:", err)
-		os.Exit(2)
+		fmt.Println("Queue container could not be pinged.")
+		return nil, err
 	}
 	return queueConn, nil
 }
@@ -59,20 +74,28 @@ func QueueIsEmpty() bool {
 	return len(rslt) == 0
 }
 
-func shutDownQueue(force bool) int {
+func ShutDownQueue(force bool) int {
+	if !QueueIsEmpty() && !force {
+		return QUEUE_SHUTDOWN_FAIL_QUEUE_NOT_EMPTY
+	}
+	if EmptyQueue() != nil {
+		return QUEUE_SHUTDOWN_FAIL_COULD_NOT_EMPTY_QUEUE
+	}
 	queue.API_CLI.Close()
 	queue.SSH_SERV_CLI.Close()
-	//run script to restart docker container or smthing TBD, if we are running kubernetes then
-	//it might be easier to get this to work
-	//check for a successful shutdown
-	shutDownCheck := false
+
+	shutDownCheck := (d.StopOneContainer(Queue_container_name) == nil)
+	if d.RemoveOneContainer(Queue_container_name) != nil{
+		fmt.Println("Queue container stopped not removed.")
+	}
+
 	if !shutDownCheck {
-		return QUEUE_CONTAINER_SHUTDOWN_UNSUCCESSFUL
+		return QUEUE_SHUTDOWN_UNSUCCESSFUL
 	}
 	return QUEUE_SHUT_DOWN_SUCCESSFUL
 }
 
-func restartQueue(force bool) int {
+func RestartQueue(force bool) int {
 	if !QueueIsEmpty() && !force {
 		return QUEUE_RESTART_FAIL_QUEUE_NOT_EMPTY
 	}
@@ -80,13 +103,12 @@ func restartQueue(force bool) int {
 		return QUEUE_RESTART_FAIL_COULD_NOT_EMPTY_QUEUE
 	}
 
-	if shutDownQueue(force) != QUEUE_SHUT_DOWN_SUCCESSFUL {
-		return QUEUE_SHUTDOWN_FAIL
+	err:= d.RestartContainer(Queue_container_name); if err!=nil{
+		return QUEUE_RESTART_UNSUCCESSFUL
 	}
-	//run script to restart container
-	//check if a container is alive
-	MakeQueue(queue.API_CONN_OPTIONS, queue.SSH_SERV_CONN_OPTIONS)
-
+	if !initQueue(queue.API_CONN_OPTIONS, queue.SSH_SERV_CONN_OPTIONS) {
+		return QUEUE_RESTART_UNSUCCESSFUL
+	}
 	return QUEUE_RESTART_SUCCESSFUL
 }
 

@@ -9,12 +9,13 @@ import (
 	d "ECE49595_PROJECT/dock"
 	"github.com/go-redis/redis"
 	"fmt"
+	// "time"
 )
 
 func main(){
-
-	fmt.Println(d.CreateNewContainer("redis/redis-stack","127.0.0.1","6379","6379"))
-	q.MakeQueue(&redis.Options{ 
+	d.InitDock()
+	d.StopAllContainers()
+	fmt.Println( q.MakeQueue(&redis.Options{ 
 		Addr: "localhost:6379", 
 		Password: "", 
 		 DB: 0, 
@@ -22,7 +23,9 @@ func main(){
 	Addr: "localhost:6379", 
 	Password: "", 
 	 DB: 0, 
-} )
+} ))
+
+	fmt.Println(q.Queue_container_name)
 	err := q.AddRequestToQueue( "test94", q.Queue_Request{NAME: "sabash", 
 	EMAIL: "sabutdana@gmail.com",
 	CURRENT_IP: "mei nahi bataonga",
@@ -35,8 +38,9 @@ func main(){
 	}
 
 	fmt.Println(q.GetRequestFromQueue( "test94"))
-	fmt.Println(q.RemoveRequestFromQueue("test94"))
-	fmt.Println(q.GetRequestFromQueue( "test94"))
+	// fmt.Println(q.RestartQueue(false))
+	fmt.Println(q.ShutDownQueue(false))
+	// fmt.Println(q.GetRequestFromQueue( "test94"))
 
 
 }

@@ -2,12 +2,11 @@ package queue
 
 import (
 	// "fmt"
+	"os"
 	"time"
+
 	"github.com/go-redis/redis"
 	"encoding/json"
-	d "ECE49595_PROJECT/dock"
-	"fmt"
-	"strings"
 )
 
 
@@ -16,19 +15,18 @@ var queue Queue //singleton implementation
 var queue_container_ID string
 
 
-func MakeQueue(api_conn_options, ssh_serv_conn_options *redis.Options) Queue{
-	d.InitDock()
-	var create_error error
-	if queue_container_ID != ""{
-		d.StopOneContainers(queue_container_ID)
-	}else {
-		queue_container_ID,  create_error = d.CreateNewContainer(CONTAINER_IMAGE,CONTAINER_MAPPED_PORT, CONTAINER_PORT)
-		if create_error!= nil || strings.Contains(queue_container_ID, "error"){ 
-			fmt.Println("Could not initialise queue.", create_error, "Exiting...")
-		}
+func handleErr(err  error, cliname string){
+	if err != nil{
+		os.Setenv("QUEUE_AVAILABLE", UNSET ) 
+	} else{
+		os.Setenv("QUEUE_AVAILABLE", SET )
 	}
+}
+
+func MakeQueue(api_conn_options, ssh_serv_conn_options *redis.Options) {
 	api_connection, err1 := makeQueueConnection(api_conn_options, API_Q_CLI)
 	ssh_serv_connection, err2:= makeQueueConnection(ssh_serv_conn_options, SSH_Q_CLI )
+	
 	queue = Queue{
 		API_CLI: api_connection,
 		SSH_SERV_CLI: ssh_serv_connection,
@@ -45,11 +43,8 @@ func makeQueueConnection(options *redis.Options, name string ) (*redis.Client, e
 	queueConn := redis.NewClient(options)
 	//check if a container exists
 	_, err := queueConn.Ping().Result()
-	if err != nil{
-		fmt.Println("Ping Failed.")
-		return nil,err
-	}
-	return queueConn, nil
+	handleErr(err, name)
+	return queueConn, err
 }
 
 func CheckAlive()Queue{
@@ -74,8 +69,10 @@ func QueueIsEmpty() bool{
 func shutDownQueue( force bool) int{
 	queue.API_CLI.Close()
 	queue.SSH_SERV_CLI.Close()
-
-	shutDownCheck :=  (d.StopOneContainers(queue_container_ID) != nil)
+	//run script to restart docker container or smthing TBD, if we are running kubernetes then 
+	//it might be easier to get this to work
+	//check for a successful shutdown
+	shutDownCheck :=  false
 	if !shutDownCheck{
 		return QUEUE_SHUTDOWN_UNSUCCESSFUL
 	}

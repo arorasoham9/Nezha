@@ -1,25 +1,33 @@
 package queue
 
 import (
-	"fmt"
-	"encoding/json"
-	"time"
 	d "ECE49595_PROJECT/dock"
+	"encoding/json"
 	"errors"
+	"fmt"
+	"os"
+	"sync"
+	"time"
+
 	"github.com/go-redis/redis"
 )
 
 var queue Queue //singleton implementation
 var Queue_container_name string
+var CurrentKey string
+var MasterWorker QueueWorker
+var slaveWorkers []QueueWorker
+var condvar *sync.Cond
+
 func initQueue(api_conn_options, ssh_serv_conn_options *redis.Options) bool{
 	api_connection, err1 := makeQueueConnection(api_conn_options, API_Q_CLI)
 	ssh_serv_connection, err2 := makeQueueConnection(ssh_serv_conn_options, SSH_Q_CLI)
-
+	condvar = &sync.Cond{L:&sync.Mutex{}}
 	queue = Queue{
 		API_CLI:               api_connection,
 		SSH_SERV_CLI:          ssh_serv_connection,
 		CREATED:               time.Now(),
-		ONLINE:                err1 != nil && err2 != nil,
+		ONLINE:                err1 == nil && err2 == nil,
 		API_CONN_OPTIONS:      api_conn_options,
 		SSH_SERV_CONN_OPTIONS: ssh_serv_conn_options,
 	}
@@ -141,7 +149,64 @@ func GetRequestFromQueue(key string) (Queue_Request, error) {
 	}
 	return request, err
 }
+// func GetRequestNextInLine()(Queue_Request, error){
 
-func GetNextRequestInLine() {
+// }
+func InitWorker(worker *QueueWorker, _ID int, isMaster bool){
+	worker.cond = condvar
+	worker.ID = _ID
+	worker.CREATED = time.Now()
+	worker.SERVED = 0
+	worker.MASTER = isMaster
+}
+//Right now the plan is to entertain one request at a time but open connections to the users via go routines. But this function will also be called by a goroutine which constantly checks
+//the appearance of new requests and opens connections.
+func BeginWork(worker *QueueWorker) {
+	// failcount :=0
+	for {
+		fmt.Println("Do I come here?")
+		worker.cond.L.Lock()
+		if QueueIsEmpty(){
+			worker.cond.Wait()
+		}
+		//now send out a connection.
+		// request, err := GetRequestNextInLine()
+		// if err != nil && failcount > MAX_GET_NEXT_REQUEST_FAIL{
+		// 	failcount++
+		// 	continue
+		// }
+		worker.cond.L.Unlock()
+		//take care of request
+		if worker.SERVED >5 {
+			fmt.Println("slave with ID", worker.ID,"exiting")
+			break
+		}
 
+
+		//increment num of sessions helped
+		worker.SERVED++
+		
+		
+	}
+
+}
+func StartAllWorkers(maxSlaves, masterID int){
+	InitWorker(&MasterWorker, masterID, true)
+	fmt.Println("Do I come herggge?", MasterWorker.ID, MasterWorker.SERVED, MasterWorker.MASTER)
+	go BeginWork(&MasterWorker)
+	// for i:=0; i< maxSlaves; i++{
+	// 	var slave QueueWorker
+	// 	InitWorker(&slave, masterID+i+1, false)
+	// 	slaveWorkers = append(slaveWorkers, slave)
+	// 	go BeginWork(&slave)
+	// }
+}
+
+func BeginQueueOperation(api_conn_options, ssh_serv_conn_options *redis.Options, maxSlaves, masterID int ){
+	d.InitDock()
+	err :=MakeQueue(api_conn_options, ssh_serv_conn_options); if err != nil{
+		fmt.Println(err)
+		os.Exit(HARD_EXIT)
+	}
+	StartAllWorkers(maxSlaves, masterID)
 }

@@ -1,13 +1,13 @@
 package queue
 
 import (
+	"sync"
 	"time"
 
 	"github.com/go-redis/redis"
-
 )
 const(
-
+//add more stuff here as you need
 	HARD_EXIT = 555
 	SOFT_EXIT = 556
 	QUEUE_UNAVAILABLE = 557;
@@ -35,11 +35,11 @@ const(
 	QUEUE_CONTAINER_MACHINE_PORT = "6379"
 	QUEUE_SHUTDOWN_FAIL_QUEUE_NOT_EMPTY = 545357489375948353
 	QUEUE_SHUTDOWN_FAIL_COULD_NOT_EMPTY_QUEUE = 645645693543457888
-
+	MAX_GET_NEXT_REQUEST_FAIL = 10
 )
 
 
-
+//add more stuff here as you need
 type Queue_Request  struct {
 	NAME string `json:"name"`
 	EMAIL string `json:"email"`
@@ -49,13 +49,19 @@ type Queue_Request  struct {
 	LASTSEEN string `json:"last_seen"`
 }
 
-
+//add more stuff here as you need
 type Location struct{
 
 	//TBD
 
 }
-
+type QueueWorker struct{
+	cond *sync.Cond
+	ID int
+	CREATED time.Time
+	SERVED int
+	MASTER bool
+}
 type Queue struct{
 	API_CLI	*redis.Client 
 	SSH_SERV_CLI *redis.Client  

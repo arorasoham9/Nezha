@@ -6,25 +6,23 @@ import (
 	// ssh "ECE49595_PROJECT/ssh"
 	q "ECE49595_PROJECT/queue"
 	// // "context"
+	d "ECE49595_PROJECT/dock"
 	"github.com/go-redis/redis"
 	"fmt"
 )
 
 func main(){
 
-	// fmt.Println(d.GetAllContainers())
-	// d.StopAllContainers()
-	
-	queue := q.MakeQueue(&redis.Options{ 
+	fmt.Println(d.CreateNewContainer("redis/redis-stack","127.0.0.1","6379","6379"))
+	q.MakeQueue(&redis.Options{ 
 		Addr: "localhost:6379", 
 		Password: "", 
 		 DB: 0, 
    }, &redis.Options{ 
 	Addr: "localhost:6379", 
 	Password: "", 
-	DB: 0, 
+	 DB: 0, 
 } )
-	fmt.Println(queue.API_CLI.Ping().Result())
 	err := q.AddRequestToQueue( "test94", q.Queue_Request{NAME: "sabash", 
 	EMAIL: "sabutdana@gmail.com",
 	CURRENT_IP: "mei nahi bataonga",

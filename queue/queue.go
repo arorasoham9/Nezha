@@ -1,19 +1,29 @@
 package queue
 
 import (
-	"fmt"
+	// "fmt"
 	"os"
-	// "os"
-	"encoding/json"
 	"time"
 
 	"github.com/go-redis/redis"
+	"encoding/json"
 )
+
+
+
 var queue Queue //singleton implementation
+var queue_container_ID string
 
 
+func handleErr(err  error, cliname string){
+	if err != nil{
+		os.Setenv("QUEUE_AVAILABLE", UNSET ) 
+	} else{
+		os.Setenv("QUEUE_AVAILABLE", SET )
+	}
+}
 
-func MakeQueue(api_conn_options, ssh_serv_conn_options *redis.Options) Queue{
+func MakeQueue(api_conn_options, ssh_serv_conn_options *redis.Options) {
 	api_connection, err1 := makeQueueConnection(api_conn_options, API_Q_CLI)
 	ssh_serv_connection, err2:= makeQueueConnection(ssh_serv_conn_options, SSH_Q_CLI )
 	
@@ -33,11 +43,8 @@ func makeQueueConnection(options *redis.Options, name string ) (*redis.Client, e
 	queueConn := redis.NewClient(options)
 	//check if a container exists
 	_, err := queueConn.Ping().Result()
-	if err != nil{
-		fmt.Println("Queue connection:",err)
-		os.Exit(2)
-	}
-	return queueConn, nil
+	handleErr(err, name)
+	return queueConn, err
 }
 
 func CheckAlive()Queue{
@@ -61,15 +68,15 @@ func QueueIsEmpty() bool{
 
 func shutDownQueue( force bool) int{
 	queue.API_CLI.Close()
-	queue.SSH_SERV_CLI.Close() 
+	queue.SSH_SERV_CLI.Close()
 	//run script to restart docker container or smthing TBD, if we are running kubernetes then 
 	//it might be easier to get this to work
 	//check for a successful shutdown
 	shutDownCheck :=  false
 	if !shutDownCheck{
-		return QUEUE_CONTAINER_SHUTDOWN_UNSUCCESSFUL
+		return QUEUE_SHUTDOWN_UNSUCCESSFUL
 	}
-	return QUEUE_SHUT_DOWN_SUCCESSFUL
+	return QUEUE_SHUTDOWN_SUCCESSFUL
 }
 
 func restartQueue( force bool) int{
@@ -80,11 +87,11 @@ func restartQueue( force bool) int{
 		return QUEUE_RESTART_FAIL_COULD_NOT_EMPTY_QUEUE
 	}
 	
-	if shutDownQueue( force) !=QUEUE_SHUT_DOWN_SUCCESSFUL{
-		return QUEUE_SHUTDOWN_FAIL
+
+	err := d.RestartContainer(queue_container_ID); if err != nil{
+		return QUEUE_RESTART_UNSUCCESSFUL
 	}
-	//run script to restart container
-	//check if a container is alive
+	time.Sleep(SLEEP_TIME)
 	MakeQueue(queue.API_CONN_OPTIONS, queue.SSH_SERV_CONN_OPTIONS)
 
 	return QUEUE_RESTART_SUCCESSFUL

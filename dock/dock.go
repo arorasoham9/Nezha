@@ -38,7 +38,7 @@ func PullImage(image string)error{
 	io.Copy(os.Stdout, out)
 	return nil
 }
-func CreateNewContainer(image, _HOST_IP, _HOST_PORT, CONTAINER_PORT string) (string, error) {
+func CreateNewContainer(image, _HOST_PORT, CONTAINER_PORT string) (string, error) {
 	err = PullImage(image)
 	if err != nil {
 		return "Image pull error.", err
@@ -83,12 +83,14 @@ func GetAllContainers()([]types.Container, error){
 
 	return containers,nil
 }
-func StopOneContainers(containerID string){
+func StopOneContainers(containerID string)error{
 
 	noWaitTimeout := 0 // to not wait for the container to exit gracefully
 	if err := cli.ContainerStop(ctx, containerID, containertypes.StopOptions{Timeout: &noWaitTimeout}); err != nil {
 		fmt.Println("Container ID:", containerID, "could not be stopped.")
+		return err
 	}
+	return nil
 }
 
 func StopAllContainers()error{
@@ -111,7 +113,24 @@ func StopAllContainers()error{
 	cli.Close()
 	return nil
 }
+func removeOneContainer(containerID string)error{
+	if err := cli.ContainerRemove(ctx, containerID, types.ContainerRemoveOptions{}); err != nil {
+		fmt.Println("Container ID:", containerID, "could not be stopped.")
+		return err
+	}
+	return nil
+}
 
+func RestartContainer(containerID string)error{
+
+	err := cli.ContainerRestart(ctx, containerID, container.StopOptions{})
+	if err != nil{
+		fmt.Println("Could not restart container", containerID)
+		return err
+	}
+
+	return nil
+}
 func GetContainerStats(containerID string){	
 	options := types.ContainerLogsOptions{ShowStdout: true}
 	out, err := cli.ContainerLogs(ctx, containerID, options)

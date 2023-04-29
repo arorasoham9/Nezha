@@ -113,6 +113,7 @@ func StopAllContainers()error{
 	cli.Close()
 	return nil
 }
+
 func RemoveOneContainer(containerID string)error{
 	if err := cli.ContainerRemove(ctx, containerID, types.ContainerRemoveOptions{}); err != nil {
 		fmt.Println("Container ID:", containerID, "could not be stopped.")
@@ -131,6 +132,7 @@ func RestartContainer(containerID string)error{
 
 	return nil
 }
+
 func GetContainerStats(containerID string){	
 	options := types.ContainerLogsOptions{ShowStdout: true}
 	out, err := cli.ContainerLogs(ctx, containerID, options)

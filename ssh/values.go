@@ -12,4 +12,6 @@ type Queue_Request  struct {
 	LOCATION string `json:"location"`
 	CREATED_AT string `json:"created_at"`
 	LASTSEEN string `json:"last_seen"`
+	PORT string `json:"port"`
+	KEY string 	`json:"key"`
 }

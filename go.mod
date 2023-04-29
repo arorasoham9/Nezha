@@ -7,8 +7,9 @@ require (
 	github.com/docker/docker v23.0.0+incompatible
 	github.com/docker/go-connections v0.4.0
 	github.com/go-redis/redis v6.15.9+incompatible
-	golang.org/x/crypto v0.5.0
-	golang.org/x/net v0.5.0
+	github.com/rgzr/sshtun v1.0.0
+	golang.org/x/crypto v0.6.0
+	golang.org/x/net v0.6.0
 )
 
 require (
@@ -25,8 +26,9 @@ require (
 	github.com/pkg/errors v0.9.1 // indirect
 	github.com/stretchr/testify v1.5.1 // indirect
 	golang.org/x/mod v0.6.0-dev.0.20220419223038-86c51ed26bb4 // indirect
-	golang.org/x/sys v0.4.0 // indirect
-	golang.org/x/term v0.4.0 // indirect
+	golang.org/x/sync v0.1.0 // indirect
+	golang.org/x/sys v0.5.0 // indirect
+	golang.org/x/term v0.5.0 // indirect
 	golang.org/x/time v0.3.0 // indirect
 	golang.org/x/tools v0.1.12 // indirect
 	gotest.tools/v3 v3.4.0 // indirect

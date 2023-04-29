@@ -1,20 +1,20 @@
 package main
 
-import (
-	// ssh "/ssh"
-	// b "ECE49595_PROJECT/basic"
-	// ssh "ECE49595_PROJECT/ssh"
-	q "ECE49595_PROJECT/queue"
-	// // "context"
-	d "ECE49595_PROJECT/dock"
-	"github.com/go-redis/redis"
-	// "fmt"
-	// "time"
-)
+// import (
+// 	// ssh "/ssh"
+// 	// b "ECE49595_PROJECT/basic"
+// 	// ssh "ECE49595_PROJECT/ssh"
+// 	q "ECE49595_PROJECT/queue"
+// 	// // "context"
+// 	d "ECE49595_PROJECT/dock"
+// 	"github.com/go-redis/redis"
+// 	// "fmt"
+// 	// "time"
+// )
 
-func main(){
-	d.InitDock()
-	d.StopAllContainers()
+// func main(){
+// 	d.InitDock()
+// 	d.StopAllContainers()
 // 	fmt.Println( q.MakeQueue(&redis.Options{ 
 // 		Addr: "localhost:6379", 
 // 		Password: "", 
@@ -42,16 +42,16 @@ func main(){
 	// fmt.Println(q.ShutDownQueue(false))
 	// // fmt.Println(q.GetRequestFromQueue( "test94"))
 
-	q.BeginQueueOperation(&redis.Options{ 
-		Addr: "localhost:6379", 
-		Password: "", 
-		 DB: 0, 
-   }, &redis.Options{ 
-	Addr: "localhost:6379", 
-	Password: "", 
-	 DB: 0, 
-}, 5, 5000)
+// 	q.BeginQueueOperation(&redis.Options{ 
+// 		Addr: "localhost:6379", 
+// 		Password: "", 
+// 		 DB: 0, 
+//    }, &redis.Options{ 
+// 	Addr: "localhost:6379", 
+// 	Password: "", 
+// 	 DB: 0, 
+// }, 5, 5000)
 
 
-}
+// }
 

@@ -188,6 +188,14 @@ func InitWorker(worker *QueueWorker, _ID int, isMaster, front, back bool ){
 //Right now the plan is to entertain one request at a time but open connections to the users via go routines. But this function will also be called by a goroutine which constantly checks
 //the appearance of new requests and opens connections.
 
+func parseRequestJSON(rqst []byte)(Queue_Request, error){
+	var request Queue_Request
+	err := json.Unmarshal([]byte(rqst), &request)
+	if err != nil {
+		return Queue_Request{}, err
+	}
+	return request, nil
+}
 func BeginWork(worker *QueueWorker) {
 	if worker.MASTER{
 		masterOnline = true
@@ -199,7 +207,10 @@ func BeginWork(worker *QueueWorker) {
 	case QUEUE_FRONTEND_WORKER:
 		for{
 			worker.Lck.Lock()
-
+			// var recvd_reqst Queue_Request
+			// var key string
+			//Mark: Get me a []byte JSON or type Queue_Request object here somehow
+			//NOTE: It should have a differntiating name to be passed in as the key for the below function
 
 			worker.CondVarAvailable.Signal()
 			worker.SERVED++
@@ -256,6 +267,8 @@ func AllWorkersOffline()bool{
 	}
 	return true
 }
+
+//SOHAM: I don't know how the "rslt" list is sorted, so there is no gaurantee that the requests will be entertained on a FIFO, LIFO, or random basis.
 func GetRequestIDNextInLine(worker *QueueWorker) (string, error){
 	rslt, err := queue.SSH_SERV_CLI.Keys("*").Result()
 	if err != nil{

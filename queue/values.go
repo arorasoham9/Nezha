@@ -61,6 +61,8 @@ type QueueWorker struct{
 	CREATED time.Time
 	SERVED int
 	MASTER bool
+	SIDE int
+	ONLINE bool
 }
 type Queue struct{
 	API_CLI	*redis.Client 

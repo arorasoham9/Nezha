@@ -5,19 +5,23 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
-	"os"
+	// "os"
 	"sync"
 	"time"
-
+	// ssh "ECE49595_PROJECT/ssh"
 	"github.com/go-redis/redis"
 )
 
 var queue Queue //singleton implementation
 var Queue_container_name string
 var CurrentKey string
-var MasterWorker QueueWorker
+var masterWorker QueueWorker
 var slaveWorkers []QueueWorker
 var condvar *sync.Cond
+var masterOnline bool
+var workersOnline []bool
+var masterID int
+var maxSlaves int
 
 func initQueue(api_conn_options, ssh_serv_conn_options *redis.Options) bool{
 	api_connection, err1 := makeQueueConnection(api_conn_options, API_Q_CLI)
@@ -152,61 +156,120 @@ func GetRequestFromQueue(key string) (Queue_Request, error) {
 // func GetRequestNextInLine()(Queue_Request, error){
 
 // }
-func InitWorker(worker *QueueWorker, _ID int, isMaster bool){
+func InitWorker(worker *QueueWorker, _ID int, isMaster, front, back bool ){
 	worker.cond = condvar
 	worker.ID = _ID
 	worker.CREATED = time.Now()
 	worker.SERVED = 0
 	worker.MASTER = isMaster
+	worker.ONLINE = true
+	if !front && back{
+		worker.SIDE = 1
+	}else if front && !back{
+		worker.SIDE = 2
+	}else if front && back{
+		worker.SIDE = 3
+	}
 }
+
 //Right now the plan is to entertain one request at a time but open connections to the users via go routines. But this function will also be called by a goroutine which constantly checks
 //the appearance of new requests and opens connections.
+
 func BeginWork(worker *QueueWorker) {
-	// failcount :=0
-	for {
-		fmt.Println("Do I come here?")
-		worker.cond.L.Lock()
-		if QueueIsEmpty(){
-			worker.cond.Wait()
-		}
-		//now send out a connection.
-		// request, err := GetRequestNextInLine()
-		// if err != nil && failcount > MAX_GET_NEXT_REQUEST_FAIL{
-		// 	failcount++
-		// 	continue
-		// }
-		worker.cond.L.Unlock()
-		//take care of request
-		if worker.SERVED >5 {
-			fmt.Println("slave with ID", worker.ID,"exiting")
-			break
+	if worker.MASTER{
+		masterOnline = true
+	}else{
+		workersOnline[worker.ID-masterID] = true
+	}
+	worker.ONLINE = true
+	
+
+	switch worker.SIDE{
+
+	case 1:
+		for{
+
 		}
 
+	case 2:
+		for{
+			fmt.Println("Do I come here?")
+			worker.cond.L.Lock()
+			if QueueIsEmpty(){
+				fmt.Println("I will now wait")
+				worker.cond.Wait()
+			}
+	
+			worker.cond.L.Unlock()
+			//take care of request
+			fmt.Println("I will now take request")
+			if worker.SERVED >5 {
+				fmt.Println("served 5, slave with ID", worker.ID,"exiting")
+				break
+			}
+			//increment num of sessions helped
+			worker.SERVED++
+		}
 
-		//increment num of sessions helped
-		worker.SERVED++
-		
-		
+	case 3:
+		for{
+			
+		}
 	}
 
-}
-func StartAllWorkers(maxSlaves, masterID int){
-	InitWorker(&MasterWorker, masterID, true)
-	fmt.Println("Do I come herggge?", MasterWorker.ID, MasterWorker.SERVED, MasterWorker.MASTER)
-	go BeginWork(&MasterWorker)
-	// for i:=0; i< maxSlaves; i++{
-	// 	var slave QueueWorker
-	// 	InitWorker(&slave, masterID+i+1, false)
-	// 	slaveWorkers = append(slaveWorkers, slave)
-	// 	go BeginWork(&slave)
-	// }
+	worker.cond = nil
+	worker.ID = 0
+	worker.CREATED = time.Time{}
+	worker.SERVED = 0
+	worker.SIDE = 0
+	worker.MASTER = false
+	worker.ONLINE = false
 }
 
-func BeginQueueOperation(api_conn_options, ssh_serv_conn_options *redis.Options, maxSlaves, masterID int ){
+
+func AllWorkersOffline()bool{
+	for i:=0 ; i< maxSlaves;i++{
+		if workersOnline[i] == true{
+			return false
+		}
+	}
+	return true
+}
+
+
+func StartAllWorkers()bool{
+
+	slaveWorkers = make([]QueueWorker,maxSlaves)
+	workersOnline = make([]bool, maxSlaves)
+
+	InitWorker(&masterWorker, masterID, true, true, true) //both front and back, master
+	go BeginWork(&masterWorker)
+
+	for i:=0; i<maxSlaves/2;i++ {
+		InitWorker(&slaveWorkers[i], masterID+i+1, false, true, false) //front
+		go BeginWork(&slaveWorkers[i])
+	}
+
+	for i:=maxSlaves/2; i<maxSlaves;i++ {
+		InitWorker(&slaveWorkers[i], masterID+i+1, false, false, true) // back
+		go BeginWork(&slaveWorkers[i])
+	}
+	time.Sleep(time.Second*10)
+	return true
+}
+
+func BeginQueueOperation(api_conn_options, ssh_serv_conn_options *redis.Options, _maxSlaves, _masterID int ) error{
+	if _maxSlaves <=0 || _masterID <=0{
+		return errors.New("Wrong MaxSlaves or Master ID argument.")
+	}
+	maxSlaves = _maxSlaves + (_maxSlaves %2) //to ensure we have equal slaves on each side of the queue.
+	masterID = _masterID
 	d.InitDock()
 	err :=MakeQueue(api_conn_options, ssh_serv_conn_options); if err != nil{
-		fmt.Println(err)
-		os.Exit(HARD_EXIT)
+		return err
 	}
-	StartAllWorkers(maxSlaves, masterID)
+	if !StartAllWorkers(){
+		return errors.New("Could not start one or more workers.")
+	}
+	return nil
 }

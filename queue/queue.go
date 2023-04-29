@@ -8,25 +8,34 @@ import (
 	// "os"
 	"sync"
 	"time"
-	// ssh "ECE49595_PROJECT/ssh"
+	ssh "ECE49595_PROJECT/ssh"
 	"github.com/go-redis/redis"
 )
+var (
+	queue Queue //singleton implementation
+	Queue_container_name string
+	CurrentKey string
+	masterWorker QueueWorker
+	slaveWorkers []QueueWorker
+	CondVarEmpty *sync.Cond
+	CondVarAvailable *sync.Cond
+	masterOnline bool
+	workersOnline []bool
+	masterID int
+	maxSlaves int
+ 	queueLck *sync.Mutex
+	UnableToDeleteRequests map[string]string
 
-var queue Queue //singleton implementation
-var Queue_container_name string
-var CurrentKey string
-var masterWorker QueueWorker
-var slaveWorkers []QueueWorker
-var condvar *sync.Cond
-var masterOnline bool
-var workersOnline []bool
-var masterID int
-var maxSlaves int
+)
+
+
 
 func initQueue(api_conn_options, ssh_serv_conn_options *redis.Options) bool{
 	api_connection, err1 := makeQueueConnection(api_conn_options, API_Q_CLI)
 	ssh_serv_connection, err2 := makeQueueConnection(ssh_serv_conn_options, SSH_Q_CLI)
-	condvar = &sync.Cond{L:&sync.Mutex{}}
+	queueLck = &sync.Mutex{}
+	CondVarEmpty = &sync.Cond{L:queueLck}
+	CondVarAvailable = &sync.Cond{L:queueLck}
 	queue = Queue{
 		API_CLI:               api_connection,
 		SSH_SERV_CLI:          ssh_serv_connection,
@@ -77,7 +86,11 @@ func CheckAlive() Queue {
 	}
 	return queue
 }
+func IsRunning()bool{
+	_, err := queue.API_CLI.Ping().Result()
+	return err != nil 
 
+}
 func QueueIsEmpty() bool {
 	rslt, err := queue.API_CLI.Keys("*").Result()
 	if err == nil {
@@ -140,35 +153,35 @@ func RemoveRequestFromQueue(key string) error {
 	return queue.API_CLI.Del(key).Err()
 }
 
-func GetRequestFromQueue(key string) (Queue_Request, error) {
-
+func GetRequestFromQueue(key string) ([]byte, error) {
 	json_byte_request, err := queue.SSH_SERV_CLI.Get(key).Bytes()
 	if err != nil {
-		return Queue_Request{}, err
+		return []byte{}, err
 	}
-	var request Queue_Request
-	err = json.Unmarshal([]byte(json_byte_request), &request)
-	if err != nil {
-		return Queue_Request{}, err
-	}
-	return request, err
+	return json_byte_request, nil
 }
-// func GetRequestNextInLine()(Queue_Request, error){
 
-// }
 func InitWorker(worker *QueueWorker, _ID int, isMaster, front, back bool ){
-	worker.cond = condvar
+	worker.CondVarEmpty= CondVarEmpty
+	worker.CondVarAvailable = CondVarAvailable
 	worker.ID = _ID
 	worker.CREATED = time.Now()
 	worker.SERVED = 0
 	worker.MASTER = isMaster
 	worker.ONLINE = true
+	worker.Lck = queueLck
 	if !front && back{
-		worker.SIDE = 1
+		worker.SIDE =  QUEUE_BACKEND_WORKER//backend
+		worker.SSH_SERV_CLI = queue.SSH_SERV_CLI
+		worker.API_CLI = nil
 	}else if front && !back{
-		worker.SIDE = 2
+		worker.SIDE = QUEUE_FRONTEND_WORKER //frontend
+		worker.API_CLI = queue.API_CLI
+		worker.SSH_SERV_CLI =  nil
 	}else if front && back{
-		worker.SIDE = 3
+		worker.SIDE = QUEUE_MASTER_WORKER //master
+		worker.API_CLI = queue.API_CLI
+		worker.SSH_SERV_CLI = queue.SSH_SERV_CLI
 	}
 }
 
@@ -182,48 +195,56 @@ func BeginWork(worker *QueueWorker) {
 		workersOnline[worker.ID-masterID] = true
 	}
 	worker.ONLINE = true
-	
-
 	switch worker.SIDE{
-
-	case 1:
+	case QUEUE_FRONTEND_WORKER:
 		for{
+			worker.Lck.Lock()
 
-		}
 
-	case 2:
-		for{
-			fmt.Println("Do I come here?")
-			worker.cond.L.Lock()
-			if QueueIsEmpty(){
-				fmt.Println("I will now wait")
-				worker.cond.Wait()
-			}
-	
-			worker.cond.L.Unlock()
-			//take care of request
-			fmt.Println("I will now take request")
-			if worker.SERVED >5 {
-				fmt.Println("served 5, slave with ID", worker.ID,"exiting")
-				break
-			}
-			//increment num of sessions helped
+			worker.CondVarAvailable.Signal()
 			worker.SERVED++
+			worker.Lck.Unlock()
 		}
-
-	case 3:
+	case QUEUE_BACKEND_WORKER:
+		for{
+			worker.Lck.Lock()
+			if QueueIsEmpty(){
+				worker.CondVarAvailable.Wait()	
+			}
+			ID, err := GetRequestIDNextInLine(worker)
+			if err != nil || ID == "" {
+				worker.Lck.Unlock()
+				continue
+			}
+			rqst, err :=GetRequestFromQueue(ID)
+			if err != nil{
+				worker.Lck.Unlock()
+				continue
+			}
+			if ssh.SendOutConnection(rqst) != nil{
+				worker.Lck.Unlock()
+				continue
+			}
+			if RemoveRequestFromQueue(ID) != nil{
+				UnableToDeleteRequests[ID] = "BAD_REQUEST"
+			}
+			worker.SERVED++
+			worker.Lck.Unlock()
+		}
+	case QUEUE_MASTER_WORKER:
 		for{
 			
-		}
+		}	
 	}
-
-	worker.cond = nil
+	worker.CondVarAvailable = nil
+	worker.CondVarEmpty = nil
 	worker.ID = 0
 	worker.CREATED = time.Time{}
 	worker.SERVED = 0
 	worker.SIDE = 0
 	worker.MASTER = false
 	worker.ONLINE = false
+	worker.Lck = nil
 }
 
 
@@ -235,10 +256,26 @@ func AllWorkersOffline()bool{
 	}
 	return true
 }
+func GetRequestIDNextInLine(worker *QueueWorker) (string, error){
+	rslt, err := queue.SSH_SERV_CLI.Keys("*").Result()
+	if err != nil{
+		return "", err
+	}
+	if len(rslt) ==0{
+		return "", errors.New("No requests in line.")
+	}
+	for _, ID := range rslt{
+		_, check := UnableToDeleteRequests[ID]
+		if check {
+			continue
+		}
+		return ID, nil
+	}
+	return "", errors.New("No valid request found, all belong to Unable to Delete.")
+}
 
 
 func StartAllWorkers()bool{
-
 	slaveWorkers = make([]QueueWorker,maxSlaves)
 	workersOnline = make([]bool, maxSlaves)
 

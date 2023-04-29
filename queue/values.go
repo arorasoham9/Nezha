@@ -36,6 +36,10 @@ const(
 	QUEUE_SHUTDOWN_FAIL_QUEUE_NOT_EMPTY = 545357489375948353
 	QUEUE_SHUTDOWN_FAIL_COULD_NOT_EMPTY_QUEUE = 645645693543457888
 	MAX_GET_NEXT_REQUEST_FAIL = 10
+	QUEUE_FRONTEND_WORKER = 1
+	QUEUE_BACKEND_WORKER = 2
+	QUEUE_MASTER_WORKER = 3
+
 )
 
 
@@ -56,13 +60,17 @@ type Location struct{
 
 }
 type QueueWorker struct{
-	cond *sync.Cond
+	CondVarEmpty *sync.Cond
+	CondVarAvailable *sync.Cond
+	Lck *sync.Mutex
 	ID int
 	CREATED time.Time
 	SERVED int
 	MASTER bool
 	SIDE int
 	ONLINE bool
+	API_CLI	*redis.Client 
+	SSH_SERV_CLI *redis.Client  
 }
 type Queue struct{
 	API_CLI	*redis.Client 

@@ -1,6 +1,6 @@
 import {  GoogleLoginProvider, SocialAuthService, SocialUser } from '@abacritt/angularx-social-login';
 import { Component, OnInit, ɵɵresolveBody } from '@angular/core';
-import { AppsService, AuthenticationService, OpenAPI, users_login_body } from 'generated';
+import { AppsService, AuthenticationService, OpenAPI, app, users_login_body } from 'generated';
 @Component({
   selector: 'app-root',
   templateUrl: './app.component.html',
@@ -11,7 +11,7 @@ export class AppComponent implements OnInit {
   title = 'frontend';
   user: SocialUser;
   loggedIn: boolean;
-  appList: Array<String>;
+  appList: Array<app>;
   userLogin: users_login_body;
   loading: boolean = false;
   private accessToken = '';
@@ -30,6 +30,12 @@ export class AppComponent implements OnInit {
   signInWithGoogle(): void {
     this.authService.signIn(GoogleLoginProvider.PROVIDER_ID);
 
+  }
+
+  connect(id: string) {
+    this.appService.connectApp(id).subscribe(body => {
+      console.log(body)
+    })
   }
 
   getToken(): void {

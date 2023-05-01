@@ -26,16 +26,34 @@ var validate = validator.New()
 func GetApps() gin.HandlerFunc {
 	return func(c *gin.Context) {
 		email := c.GetString("email")
+		// name := c.GetString("name")
 		fmt.Println(email)
 		appList, _ := db.GetApps(email)
 
+		c.IndentedJSON(http.StatusOK, appList)
+	}
+}
+
+func Connect() gin.HandlerFunc {
+	return func(c *gin.Context) {
+		_, ok := c.Params.Get("id") // Do something with app Id
+		if !ok {
+			log.Errorf("Connection requires id")
+			c.AbortWithStatus(http.StatusBadRequest)
+			return
+		}
+
+		email := c.GetString("email")
+		name := c.GetString("name")
+
 		request := queue.Queue_Request{
 			EMAIL:      email,
+			NAME:       name,
 			CURRENT_IP: c.ClientIP(),
 			CREATED_AT: time.Now().String(),
 		}
 
-		err := queue.SendToRedis(request, "mabaums")
+		err := queue.SendToRedis(request, email) // Create key
 
 		if err != nil {
 			log.Error(err)
@@ -43,36 +61,7 @@ func GetApps() gin.HandlerFunc {
 			return
 		}
 
-		c.IndentedJSON(http.StatusOK, appList)
-	}
-}
-
-func SignUp() gin.HandlerFunc {
-	return func(c *gin.Context) {
-
-		var user models.User
-
-		if err := c.BindJSON(&user); err != nil {
-			c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
-			return
-		}
-		//var ctx, cancel = context.WithTimeout(context.Background(), 100*time.Second)
-		validationErr := validate.Struct(user)
-
-		if validationErr != nil {
-			c.JSON(http.StatusBadRequest, gin.H{"error": validationErr.Error()})
-			return
-		}
-		count, err := db.GetEmailCount(*user.Email)
-		//count, err := userCollection.CountDocuments(ctx, bson.M{"email": user.Email})
-		if err != nil {
-			log.Panic(err)
-			return
-		}
-		fmt.Print(count)
-
-		fmt.Println(*user.Email)
-
+		c.Status(http.StatusOK)
 	}
 }
 
@@ -80,7 +69,7 @@ func Login() gin.HandlerFunc {
 	return func(c *gin.Context) {
 
 		var user models.User
-		var foundUser models.User
+		var foundUser *models.User
 
 		if err := c.BindJSON(&user); err != nil {
 			c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
@@ -98,16 +87,22 @@ func Login() gin.HandlerFunc {
 		//fmt.Print(payload.Claims["email"])
 		claims := payload.Claims
 		email := fmt.Sprintf("%v", claims["email"])
+		name := claims["name"].(string)
+
 		log.Printf("Attempted login user %v", email)
 
-		foundUser, err = db.FindUserByEmail("users", email)
+		foundUser, err = db.FindUserByEmail(email)
 		if err != nil {
-			c.JSON(http.StatusUnauthorized, gin.H{"error": "login or passowrd is incorrect"})
-			log.Printf("Invalid user: %v", *user.Email)
-			return
+			log.Infof("Creating new user %v", email)
+			foundUser, err = db.AddUser(email, name, false)
+			if err != nil {
+				log.Errorf("Could not create new user")
+				c.AbortWithStatus(http.StatusInternalServerError)
+				return
+			}
 		}
 
-		token, _, err := helpers.GenerateAllTokens(*foundUser.Email) // TODO: Return refresh token.
+		token, _, err := helpers.GenerateAllTokens(email, name, foundUser.IsAdmin) // TODO: Return refresh token.
 
 		if err != nil {
 			c.JSON(http.StatusInternalServerError, gin.H{"error": "Issue with JWT token creation"})

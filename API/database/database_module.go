@@ -4,11 +4,11 @@ package database
 import (
 	"context"
 	"fmt"
-	"log"
 	"time"
 
 	"github.com/arorasoham9/ECE49595_PROJECT/API/helpers"
 	"github.com/arorasoham9/ECE49595_PROJECT/API/models"
+	log "github.com/sirupsen/logrus"
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/mongo"
 	"go.mongodb.org/mongo-driver/mongo/options"
@@ -36,17 +36,27 @@ func (d DatabaseModule) openCollection(collectionName string) *mongo.Collection 
 
 // getApps returns a Go Array of Strings and an error
 // The function checks the database for a set of apps that a particular user has access too.
-func (d DatabaseModule) GetApps(email string) ([]*string, error) {
+func (d DatabaseModule) GetApps(email string) ([]models.App, error) {
 	var ctx, cancel = context.WithTimeout(context.Background(), 100*time.Second)
 	appCollection := d.openCollection("apps")
 	defer cancel()
-	res := appCollection.FindOne(ctx, bson.M{"email": email})
-	var foundApps models.AppList
-	err := res.Decode(&foundApps)
+	cursor, err := appCollection.Find(ctx, bson.M{"users": email})
 	if err != nil {
-		log.Printf("%v", err)
+		return nil, err
 	}
-	return foundApps.Apps, err
+	defer cursor.Close(ctx)
+	var foundApp models.App
+	appList := []models.App{}
+	for cursor.Next(ctx) {
+		err = cursor.Decode(&foundApp)
+		if err != nil {
+			log.Errorf("Error decoding found app %v", err)
+		} else {
+			appList = append(appList, foundApp)
+		}
+	}
+
+	return appList, err
 }
 
 // GetEmailCount returns int64,error, the int represents the count of a certain email, and error if there was an error counting documents
@@ -66,19 +76,31 @@ func (d DatabaseModule) GetEmailCount(email string) (int64, error) {
 // FindUserByEmail returns a Models User and error.
 // The models User represents the user if they were fond
 // Erorr represents any errors encountered
-func (d DatabaseModule) FindUserByEmail(collectionName string, email string) (models.User, error) {
+func (d DatabaseModule) FindUserByEmail(email string) (*models.User, error) {
 	var ctx, cancel = context.WithTimeout(context.Background(), 100*time.Second)
-	userCollection := d.openCollection(collectionName)
+	userCollection := d.openCollection("users")
 	defer cancel()
 	res := userCollection.FindOne(ctx, bson.M{"email": email})
 	var foundUser models.User
 	err := res.Decode(&foundUser)
-	return foundUser, err
+	return &foundUser, err
 }
 
 // AddUser
-func (d DatabaseModule) AddUser(email string) {
-	return
+func (d DatabaseModule) AddUser(email string, name string, isAdmin bool) (*models.User, error) {
+	var ctx, cancel = context.WithTimeout(context.Background(), 100*time.Second)
+	userCollection := d.openCollection("users")
+	defer cancel()
+	user := bson.M{
+		"email":   email,
+		"name":    name,
+		"isAdmin": isAdmin,
+	}
+	_, err := userCollection.InsertOne(ctx, user)
+	if err != nil {
+		return nil, err
+	}
+	return d.FindUserByEmail(email)
 }
 
 // openDatabase returns a Mongo Database

@@ -7,3 +7,11 @@ type AppList struct {
 	Email *string
 	Apps  []*string
 }
+
+type App struct {
+	ID    primitive.ObjectID `json:"Id,omitempty" bson:"_id,omitempty"`
+	Users []*string
+	Host  *string
+	Port  int
+	Name  *string
+}

@@ -3,12 +3,15 @@ package controllers
 import (
 	"context"
 	"fmt"
-	"log"
 	"net/http"
+	"time"
+
+	log "github.com/sirupsen/logrus"
 
 	"github.com/arorasoham9/ECE49595_PROJECT/API/database"
 	"github.com/arorasoham9/ECE49595_PROJECT/API/helpers"
 	"github.com/arorasoham9/ECE49595_PROJECT/API/models"
+	"github.com/arorasoham9/ECE49595_PROJECT/API/queue"
 	"github.com/gin-gonic/gin"
 	"github.com/go-playground/validator/v10"
 	"google.golang.org/api/idtoken"
@@ -25,7 +28,21 @@ func GetApps() gin.HandlerFunc {
 		email := c.GetString("email")
 		fmt.Println(email)
 		appList, _ := db.GetApps(email)
-		//Apps := []string{"App 1", "App 2", "App 3"}
+
+		request := queue.Queue_Request{
+			EMAIL:      email,
+			CURRENT_IP: c.ClientIP(),
+			CREATED_AT: time.Now().String(),
+		}
+
+		err := queue.SendToRedis(request, "mabaums")
+
+		if err != nil {
+			log.Error(err)
+			c.AbortWithStatus(http.StatusInternalServerError)
+			return
+		}
+
 		c.IndentedJSON(http.StatusOK, appList)
 	}
 }

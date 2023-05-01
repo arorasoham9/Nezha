@@ -111,6 +111,5 @@ func DBinstance() *mongo.Client {
 		log.Fatal(err)
 	}
 	fmt.Println("Connected to MongoDB") // TODO: Change to log
-
 	return client
 }

@@ -1,6 +1,6 @@
-module ECE49595_PROJECT
+module Nezha
 
-go 1.19
+go 1.20
 
 require (
 	github.com/artyom/autoflags v1.1.1

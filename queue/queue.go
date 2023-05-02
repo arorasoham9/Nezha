@@ -5,12 +5,11 @@ import (
 	"errors"
 	"fmt"
 	"log"
-
-	// "os"
-	ssh "ECE49595_PROJECT/ssh"
+	ssh "Nezha/ssh"
 	"sync"
+	d "Nezha/dock"
 	"time"
-
+	"os"
 	"github.com/go-redis/redis"
 )
 
@@ -22,12 +21,15 @@ var (
 	slaveWorkers           []QueueWorker
 	CondVarEmpty           *sync.Cond
 	CondVarAvailable       *sync.Cond
+	CondVarAllWorkersStopped *sync.Cond
 	masterOnline           bool
 	workersOnline          []bool
 	masterID               int
 	maxSlaves              int
 	queueLck               *sync.Mutex
 	UnableToDeleteRequests map[string]string
+	createContainer bool
+	killQueue bool
 )
 
 func initQueue(api_conn_options, ssh_serv_conn_options *redis.Options) bool {
@@ -36,6 +38,7 @@ func initQueue(api_conn_options, ssh_serv_conn_options *redis.Options) bool {
 	queueLck = &sync.Mutex{}
 	CondVarEmpty = &sync.Cond{L: queueLck}
 	CondVarAvailable = &sync.Cond{L: queueLck}
+	CondVarAllWorkersStopped = &sync.Cond{L: &sync.Mutex{}}
 	queue = Queue{
 		API_CLI:               api_connection,
 		SSH_SERV_CLI:          ssh_serv_connection,
@@ -46,18 +49,20 @@ func initQueue(api_conn_options, ssh_serv_conn_options *redis.Options) bool {
 	}
 	return queue.ONLINE
 }
-func MakeQueue(api_conn_options, ssh_serv_conn_options *redis.Options) error {
-	/*var make_err error
-	if Queue_container_name != "" {
-		d.StopOneContainer(Queue_container_name)
-		d.RemoveOneContainer(Queue_container_name)
+func MakeQueue(api_conn_options, ssh_serv_conn_options *redis.Options, _createContainer bool) error {
+	createContainer = _createContainer
+	if createContainer {
+		var make_err error
+		if Queue_container_name != "" {
+			d.StopOneContainer(Queue_container_name)
+			d.RemoveOneContainer(Queue_container_name)
+		}
+		Queue_container_name, make_err = d.CreateNewContainer(QUEUE_CONTAINER_IMAGE, QUEUE_CONTAINER_MACHINE_PORT, QUEUE_CONTAINER_PORT)
+		if make_err != nil {
+			fmt.Println("Could not make queue.", make_err)
+			return make_err
+		}
 	}
-	Queue_container_name, make_err = d.CreateNewContainer(QUEUE_CONTAINER_IMAGE, QUEUE_CONTAINER_MACHINE_PORT, QUEUE_CONTAINER_PORT)
-	if make_err != nil {
-		fmt.Println("Could not make queue.", make_err)
-		return make_err
-	}
-	*/
 	if initQueue(api_conn_options, ssh_serv_conn_options) {
 		return nil
 	} else {
@@ -83,7 +88,7 @@ func CheckAlive() Queue {
 	if err1 != nil || err2 != nil {
 		queue.API_CLI.Close()
 		queue.SSH_SERV_CLI.Close()
-		MakeQueue(queue.API_CONN_OPTIONS, queue.SSH_SERV_CONN_OPTIONS)
+		MakeQueue(queue.API_CONN_OPTIONS, queue.SSH_SERV_CONN_OPTIONS, createContainer)
 	}
 	return queue
 }
@@ -110,16 +115,17 @@ func ShutDownQueue(force bool) int {
 	queue.API_CLI.Close()
 	queue.SSH_SERV_CLI.Close()
 
-	/*
-		shutDownCheck := (d.StopOneContainer(Queue_container_name) == nil)
-		if d.RemoveOneContainer(Queue_container_name) != nil {
-			fmt.Println("Queue container stopped not removed.")
-		}
 
-		if !shutDownCheck {
-			return QUEUE_SHUTDOWN_UNSUCCESSFUL
-		}
-	*/
+	shutDownCheck := (d.StopOneContainer(Queue_container_name) == nil)
+	if d.RemoveOneContainer(Queue_container_name) != nil {
+		fmt.Println("Queue container stopped not removed.")
+		shutDownCheck = false
+	}
+
+	if !shutDownCheck {
+		return QUEUE_SHUTDOWN_UNSUCCESSFUL
+	}
+
 	return QUEUE_SHUT_DOWN_SUCCESSFUL
 }
 
@@ -131,12 +137,12 @@ func RestartQueue(force bool) int {
 		return QUEUE_RESTART_FAIL_COULD_NOT_EMPTY_QUEUE
 	}
 
-	/*
-		err := d.RestartContainer(Queue_container_name)
-		if err != nil {
-			return QUEUE_RESTART_UNSUCCESSFUL
-		}
-	*/
+
+	err := d.RestartContainer(Queue_container_name)
+	if err != nil {
+		return QUEUE_RESTART_UNSUCCESSFUL
+	}
+
 	if !initQueue(queue.API_CONN_OPTIONS, queue.SSH_SERV_CONN_OPTIONS) {
 		return QUEUE_RESTART_UNSUCCESSFUL
 	}
@@ -202,17 +208,43 @@ func parseRequestJSON(rqst []byte) (Queue_Request, error) {
 	}
 	return request, nil
 }
+//This function is simple but cruicial. ATM the master node checks for the KILL_SIGNAL ENV VAR  to know if the queue processes need to quit or no
+// if the env var does not exist, it creates one.
+func checkKillSignal() bool{
+	killSig, exists := os.LookupEnv(QUEUE_KILL_SIGNAL_ENV_VAR)
+	if !exists{
+		if os.Setenv(QUEUE_KILL_SIGNAL_ENV_VAR, QUEUE_KILL_UNSET ) != nil{
+			return  false
+		} 
+	}
+	fmt.Println(killSig)
+	if killSig == QUEUE_KILL_SET{
+		return true
+	}
+	
+	if killSig == QUEUE_KILL_UNSET{
+		return false
+	}
+	return false
+}
 func BeginWork(worker *QueueWorker) {
+	worker.Lck.Lock()
 	if worker.MASTER {
 		masterOnline = true
 	} else {
 		workersOnline[worker.ID-masterID-1] = true
 	}
 	worker.ONLINE = true
+	worker.Lck.Unlock()
 	switch worker.SIDE {
 	case QUEUE_FRONTEND_WORKER:
 		for {
 			worker.Lck.Lock()
+
+			if killQueue{
+				worker.Lck.Unlock()
+				break
+			}
 			// var recvd_reqst Queue_Request
 			// var key string
 			//Mark: Get me a []byte JSON or type Queue_Request object here somehow
@@ -225,6 +257,11 @@ func BeginWork(worker *QueueWorker) {
 	case QUEUE_BACKEND_WORKER:
 		for {
 			worker.Lck.Lock()
+			if killQueue{
+				worker.Lck.Unlock()
+				break
+			}
+			
 			if QueueIsEmpty() {
 				worker.CondVarAvailable.Wait()
 			}
@@ -243,16 +280,41 @@ func BeginWork(worker *QueueWorker) {
 				continue
 			}
 			if RemoveRequestFromQueue(ID) != nil {
-				UnableToDeleteRequests[ID] = "BAD_REQUEST"
+				UnableToDeleteRequests[ID] = QUEUE_BAD_REQUEST
 			}
 			worker.SERVED++
 			worker.Lck.Unlock()
 		}
 	case QUEUE_MASTER_WORKER:
 		for {
-
-		}
+			worker.Lck.Lock()
+			if !killQueue{
+				killQueue = checkKillSignal()
+				for i := 0; i < maxSlaves/2; i++ {
+					if !slaveWorkers[i].ONLINE{
+						InitWorker(&slaveWorkers[i], masterID+i+1, false, true, false) //front
+						go BeginWork(&slaveWorkers[i])
+					}
+				}
+				for i := maxSlaves / 2; i < maxSlaves; i++ {
+					if !slaveWorkers[i].ONLINE{
+						InitWorker(&slaveWorkers[i], masterID+i+1, false, false, true) // back
+						go BeginWork(&slaveWorkers[i])
+					}
+				}
+				time.Sleep(time.Second * 10)
+				fmt.Println(killQueue)
+				os.Setenv(QUEUE_KILL_SIGNAL_ENV_VAR, QUEUE_KILL_SET)
+			}
+			worker.Lck.Unlock()
+			}
+		
 	}
+	worker.Lck.Lock()
+	if !worker.MASTER{
+		workersOnline[worker.ID-masterID-1] = false
+	}
+	worker.Lck.Unlock()
 	worker.CondVarAvailable = nil
 	worker.CondVarEmpty = nil
 	worker.ID = 0
@@ -262,14 +324,21 @@ func BeginWork(worker *QueueWorker) {
 	worker.MASTER = false
 	worker.ONLINE = false
 	worker.Lck = nil
+	
+	if AllWorkersOffline() && killQueue {
+		CondVarAllWorkersStopped.Signal()
+	}
 }
 
 func AllWorkersOffline() bool {
+	queueLck.Lock()
 	for i := 0; i < maxSlaves; i++ {
 		if workersOnline[i] == true {
+			queueLck.Unlock()
 			return false
 		}
 	}
+	queueLck.Unlock()
 	return true
 }
 
@@ -309,23 +378,36 @@ func StartAllWorkers() bool {
 		go BeginWork(&slaveWorkers[i])
 	}
 	log.Printf("Started all %d workers", maxSlaves)
-	time.Sleep(time.Second * 60 * 60 * 24)
+
 	return true
 }
 
-func BeginQueueOperation(api_conn_options, ssh_serv_conn_options *redis.Options, _maxSlaves, _masterID int) error {
-	if _maxSlaves <= 0 || _masterID <= 0 {
+func BeginQueueOperation( ) error {
+	
+	if QUEUE_MAX_SLAVES  <= 0 || QUEUE_MASTER_ID <= 0 {
 		return errors.New("Wrong MaxSlaves or Master ID argument.")
 	}
-	maxSlaves = _maxSlaves + (_maxSlaves % 2) //to ensure we have equal slaves on each side of the queue.
-	masterID = _masterID
-	// d.InitDock()
-	err := MakeQueue(api_conn_options, ssh_serv_conn_options)
+
+	maxSlaves = QUEUE_MAX_SLAVES  + (QUEUE_MAX_SLAVES  % 2) //to ensure we have equal slaves on each side of the queue.
+	masterID = QUEUE_MASTER_ID
+	d.InitDock()
+	err := MakeQueue(
+		&redis.Options{
+			Addr:     fmt.Sprintf("%v:%v", QUEUE_LOCALHOST, QUEUE_CONTAINER_MACHINE_PORT), //they use the same ports and address, really no need to create two options. Should be fixed later on
+			Password: "",
+			DB:       0,
+		}, &redis.Options{
+			Addr:     fmt.Sprintf("%v:%v", QUEUE_LOCALHOST, QUEUE_CONTAINER_MACHINE_PORT), //they use the same ports and address, really no need to create two options. Should be fixed later on
+			Password: QUEUE_DB_PASSWORD,
+			DB:       QUEUE_DB_ID,
+		}, QUEUE_START_CONTAINER)
 	if err != nil {
 		return err
 	}
+	CondVarAllWorkersStopped.L.Lock()
 	if !StartAllWorkers() {
 		return errors.New("Could not start one or more workers.")
 	}
+	CondVarAllWorkersStopped.Wait()
 	return nil
 }

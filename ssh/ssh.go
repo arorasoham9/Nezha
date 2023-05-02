@@ -310,29 +310,29 @@ func loadConfig() (tunns []tunnel, closer func() error) {
 }
 
 // this is not supposed to be  main, I just tried to test it for now in main.go and just pasted it here. Will create the necessary functions soon
-func main() {
-	tunns, closer := loadConfig()
-	defer closer()
+// func main() {
+// 	tunns, closer := loadConfig()
+// 	defer closer()
 
-	// Setup signal handler to initiate shutdown.
-	ctx, cancel := context.WithCancel(context.Background())
-	go func() {
-		sigc := make(chan os.Signal, 1)
-		signal.Notify(sigc, syscall.SIGINT, syscall.SIGTERM)
-		fmt.Printf("received %v - initiating shutdown\n", <-sigc)
-		cancel()
-	}()
+// 	// Setup signal handler to initiate shutdown.
+// 	ctx, cancel := context.WithCancel(context.Background())
+// 	go func() {
+// 		sigc := make(chan os.Signal, 1)
+// 		signal.Notify(sigc, syscall.SIGINT, syscall.SIGTERM)
+// 		fmt.Printf("received %v - initiating shutdown\n", <-sigc)
+// 		cancel()
+// 	}()
 
-	// Start a bridge for each tunnel.
-	var wg sync.WaitGroup
-	fmt.Printf("%s starting\n", path.Base(os.Args[0]))
-	defer fmt.Printf("%s shutdown\n", path.Base(os.Args[0]))
-	for _, t := range tunns {
-		wg.Add(1)
-		go t.bindTunnel(ctx, &wg)
-	}
-	wg.Wait()
-}
+// 	// Start a bridge for each tunnel.
+// 	var wg sync.WaitGroup
+// 	fmt.Printf("%s starting\n", path.Base(os.Args[0]))
+// 	defer fmt.Printf("%s shutdown\n", path.Base(os.Args[0]))
+// 	for _, t := range tunns {
+// 		wg.Add(1)
+// 		go t.bindTunnel(ctx, &wg)
+// 	}
+// 	wg.Wait()
+// }
 
 func SendOutConnection(bytes []byte) error {
 	var request interface{}

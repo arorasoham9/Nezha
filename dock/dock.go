@@ -5,7 +5,6 @@ import (
 	"fmt"
 	"io"
 	"os"
-
 	"github.com/docker/docker/api/types"
 	"github.com/docker/docker/api/types/container"
 	containertypes "github.com/docker/docker/api/types/container"

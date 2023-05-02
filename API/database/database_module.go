@@ -6,8 +6,8 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/arorasoham9/ECE49595_PROJECT/API/helpers"
-	"github.com/arorasoham9/ECE49595_PROJECT/API/models"
+	"Nezha/API/helpers"
+	"Nezha/API/models"
 	log "github.com/sirupsen/logrus"
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/mongo"

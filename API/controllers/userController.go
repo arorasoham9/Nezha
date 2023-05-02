@@ -8,10 +8,10 @@ import (
 
 	log "github.com/sirupsen/logrus"
 
-	"github.com/arorasoham9/ECE49595_PROJECT/API/database"
-	"github.com/arorasoham9/ECE49595_PROJECT/API/helpers"
-	"github.com/arorasoham9/ECE49595_PROJECT/API/models"
-	"github.com/arorasoham9/ECE49595_PROJECT/API/queue"
+	"Nezha/API/database"
+	"Nezha/API/helpers"
+	"Nezha/API/models"
+	"Nezha/API/queue"
 	"github.com/gin-gonic/gin"
 	"github.com/go-playground/validator/v10"
 	"google.golang.org/api/idtoken"

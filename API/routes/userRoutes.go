@@ -1,8 +1,8 @@
 package routes
 
 import (
-	"github.com/arorasoham9/ECE49595_PROJECT/API/controllers"
-	"github.com/arorasoham9/ECE49595_PROJECT/API/helpers"
+	"Nezha/API/controllers"
+	"Nezha/API/helpers"
 	"github.com/gin-gonic/gin"
 )
 

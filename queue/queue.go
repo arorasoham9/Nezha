@@ -245,10 +245,9 @@ func BeginWork(worker *QueueWorker) {
 				worker.Lck.Unlock()
 				break
 			}
-			// var recvd_reqst Queue_Request
-			// var key string
-			//Mark: Get me a []byte JSON or type Queue_Request object here somehow
-			//NOTE: It should have a differntiating name to be passed in as the key for the below function
+
+			
+			//respond with connection success via API
 
 			worker.CondVarAvailable.Signal()
 			worker.SERVED++
@@ -275,13 +274,17 @@ func BeginWork(worker *QueueWorker) {
 				worker.Lck.Unlock()
 				continue
 			}
-			if ssh.SendOutConnection(rqst) != nil {
-				worker.Lck.Unlock()
-				continue
+			go ssh.SendOutConnection(rqst, ID)
+			time.Sleep(time.Second * 10)
+			if ssh.UnFulfilledRequests[ID] >= ssh.SSH_NUM_TIMOUT{
+				//respond with a error via API
 			}
 			if RemoveRequestFromQueue(ID) != nil {
 				UnableToDeleteRequests[ID] = QUEUE_BAD_REQUEST
 			}
+			//respond with connection success via API
+
+			//
 			worker.SERVED++
 			worker.Lck.Unlock()
 		}
@@ -302,9 +305,6 @@ func BeginWork(worker *QueueWorker) {
 						go BeginWork(&slaveWorkers[i])
 					}
 				}
-				time.Sleep(time.Second * 10)
-				fmt.Println(killQueue)
-				os.Setenv(QUEUE_KILL_SIGNAL_ENV_VAR, QUEUE_KILL_SET)
 			}
 			worker.Lck.Unlock()
 			}

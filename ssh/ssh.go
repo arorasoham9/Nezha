@@ -5,7 +5,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"io"
-	"log"
+
 	"net"
 	"os"
 	"os/signal"
@@ -17,87 +17,6 @@ import (
 
 	"golang.org/x/crypto/ssh"
 )
-
-// https://github.com/dsnet/sshtunnel
-var version string
-
-type TunnelConfig struct {
-	// LogFile is where the proxy daemon will direct its output log.
-	// If the path is empty, then the server will output to os.Stderr.
-	LogFile string `json:",omitempty"`
-
-	// KeyFiles is a list of SSH private key files.
-	KeyFiles []string
-
-	// KnownHostFiles is a list of key database files for host public keys
-	// in the OpenSSH known_hosts file format.
-	KnownHostFiles []string
-
-	// KeepAlive sets the keep alive settings for each SSH connection.
-	// It is recommended that these values match the AliveInterval and
-	// AliveCountMax parameters on the remote OpenSSH server.
-	// If unset, then the default is an interval of 30s with 2 max counts.
-	KeepAlive *KeepAliveConfig `json:",omitempty"`
-
-	// Tunnels is a list of tunnels to establish.
-	// The same set of SSH keys will be used to authenticate the
-	// SSH connection for each server.
-	Tunnels []struct {
-		// Tunnel is a pair of host:port endpoints that can be configured
-		// to either operate as a forward tunnel or a reverse tunnel.
-		//
-		// The syntax of a forward tunnel is:
-		//	"bind_address:port -> dial_address:port"
-		//
-		// A forward tunnel opens a listening TCP socket on the
-		// local side (at bind_address:port) and proxies all traffic to a
-		// socket on the remote side (at dial_address:port).
-		//
-		// The syntax of a reverse tunnel is:
-		//	"dial_address:port <- bind_address:port"
-		//
-		// A reverse tunnel opens a listening TCP socket on the
-		// remote side (at bind_address:port) and proxies all traffic to a
-		// socket on the local side (at dial_address:port).
-		Tunnel string
-
-		// Server is a remote SSH host. It has the following syntax:
-		//	"user@host:port"
-		//
-		// If the user is missing, then it defaults to the current process user.
-		// If the port is missing, then it defaults to 22.
-		Server string
-
-		// KeepAlive is a tunnel-specific setting of the global KeepAlive.
-		// If unspecified, it uses the global KeepAlive settings.
-		KeepAlive *KeepAliveConfig `json:",omitempty"`
-	}
-}
-
-type KeepAliveConfig struct {
-	// Interval is the amount of time in seconds to wait before the
-	// tunnel client will send a keep-alive message to ensure some minimum
-	// traffic on the SSH connection.
-	Interval uint
-
-	// CountMax is the maximum number of consecutive failed responses to
-	// keep-alive messages the client is willing to tolerate before considering
-	// the SSH connection as dead.
-	CountMax uint
-}
-
-type tunnel struct {
-	auth          []ssh.AuthMethod
-	hostKeys      ssh.HostKeyCallback
-	mode          byte // '>' for forward, '<' for reverse
-	user          string
-	hostAddr      string
-	bindAddr      string
-	dialAddr      string
-	retryInterval time.Duration
-	keepAlive     KeepAliveConfig
-	//log logger
-}
 
 func (t tunnel) String() string {
 	var left, right string
@@ -285,33 +204,48 @@ func (t tunnel) keepAliveMonitor(once *sync.Once, wg *sync.WaitGroup, client *ss
 	}
 }
 
-func loadConfig() (tunns []tunnel, closer func() error) {
+func loadConfig(MODE int,USERNAME, PASSWORD, DIAL_PORT, BIND_PORT, HOST_ADDR, HOST_PORT string, TIMEOUT_RETRY int) (tunns []tunnel, closer func() error) {
 
 	// 1.) Build Auth Agent and Config
 	var auth []ssh.AuthMethod
 	// if SSH_KEY_FILE_PASSWORD != "" {
-	auth = append(auth, ssh.Password("Givemeemail@261"))
+	auth = append(auth, ssh.Password(PASSWORD))
 
 	var tunn2 tunnel
 	tunn2.auth = auth
 	tunn2.hostKeys = func(hostname string, remote net.Addr, key ssh.PublicKey) error {
 		return nil
 	}
-	tunn2.mode = '>' // '>' for forward, '<' for reverse
-	tunn2.user = "arora106"
-	tunn2.hostAddr = net.JoinHostPort("eceprog.ecn.purdue.edu", "22")
-	tunn2.bindAddr = "localhost:9559"
-	tunn2.dialAddr = "localhost:22"
-	tunn2.retryInterval = 30 * time.Second
+	switch MODE{
+		// 1 for '>' 2 for '<' 
+		// tunn2.mode = '>' // '>' for forward, '<' for reverse
+	case 1:
+		tunn2.mode = '>' // '>' for forward, '<' for reverse
+	case 2: 
+		tunn2.mode = '<' // '>' for forward, '<' for reverse	
+	}
+	tunn2.user = USERNAME
+	tunn2.hostAddr = net.JoinHostPort("HOST_ADDR", HOST_PORT)
+	tunn2.bindAddr = "localhost:"+BIND_PORT
+	tunn2.dialAddr = "localhost:"+DIAL_PORT
+	tunn2.retryInterval = time.Duration(TIMEOUT_RETRY) * time.Second
 	//tunn1.keepAlive = *KeepAliveConfig
 	tunns = append(tunns, tunn2)
 
 	return tunns, closer
 }
 
+
+
 // this is not supposed to be  main, I just tried to test it for now in main.go and just pasted it here. Will create the necessary functions soon
-func main() {
-	tunns, closer := loadConfig()
+func SendOutConnection(rqst []byte, ID string) {
+	var request Queue_Request
+	err := json.Unmarshal(rqst, &request)
+	if err != nil{
+		UnFulfilledRequests[ID]++ 
+		return
+	}
+	tunns, closer := loadConfig(SSH_MODE ,request.USERNAME, request.PASSWORD, request.DIAL_PORT, request.BIND_PORT, request.HOST_ADDR, request.HOST_PORT, TIMEOUT_RETRY)
 	defer closer()
 
 	// Setup signal handler to initiate shutdown.
@@ -332,16 +266,4 @@ func main() {
 		go t.bindTunnel(ctx, &wg)
 	}
 	wg.Wait()
-}
-
-func SendOutConnection(bytes []byte) error {
-	var request interface{}
-	err := json.Unmarshal(bytes, &request)
-	if err != nil {
-		log.Printf("SendOutConnection: Error unmarshalling request: %v", err)
-		return err
-	} else {
-		log.Printf("SendOutConnection: Unmarshalled request %v", request)
-		return nil
-	}
 }

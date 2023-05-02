@@ -53,15 +53,17 @@ const(
 
 
 //add more stuff here as you need
-type Queue_Request  struct {
-	NAME string `json:"name"`
-	EMAIL string `json:"email"`
-	CURRENT_IP string `json:"current_ip"`
-	LOCATION string `json:"location"`
-	CREATED_AT string `json:"created_at"`
-	LASTSEEN string `json:"last_seen"`
+type Queue_Request struct {
+	USERNAME       string `json:"name"`
+	EMAIL      		string `json:"email"`
+	LOCATION   		string `json:"location"`
+	CREATED_AT 		string `json:"created_at"`
+	DIAL_PORT        string `json:"dial_port"`
+	BIND_PORT        string `json:"bind_port"`
+	HOST_ADDR       string `json:"host_addr"`
+	HOST_PORT        string `json:"host_port"`
+	PASSWORD        string `json:"pwd"`
 }
-
 //add more stuff here as you need
 type Location struct{
 

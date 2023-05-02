@@ -1,23 +1,18 @@
-package controllers
+package API
 
 import (
+	"Nezha/queue"
 	"context"
 	"fmt"
 	"net/http"
-	"time"
 
-	log "github.com/sirupsen/logrus"
-
-	"Nezha/API/database"
-	"Nezha/API/helpers"
-	"Nezha/API/models"
-	"Nezha/API/queue"
 	"github.com/gin-gonic/gin"
 	"github.com/go-playground/validator/v10"
+	log "github.com/sirupsen/logrus"
 	"google.golang.org/api/idtoken"
 )
 
-var db = database.DatabaseModule{}
+var db = DatabaseModule{}
 
 // var userCollection *mongo.Collection = database.OpenCollection(database.Client, "users")
 var validate = validator.New()
@@ -36,7 +31,7 @@ func GetApps() gin.HandlerFunc {
 
 func Connect() gin.HandlerFunc {
 	return func(c *gin.Context) {
-		_, ok := c.Params.Get("id") // Do something with app Id
+		id, ok := c.Params.Get("id") // Do something with app Id
 		if !ok {
 			log.Errorf("Connection requires id")
 			c.AbortWithStatus(http.StatusBadRequest)
@@ -47,14 +42,19 @@ func Connect() gin.HandlerFunc {
 		name := c.GetString("name")
 
 		request := queue.Queue_Request{
-			EMAIL:      email,
-			NAME:       name,
-			CURRENT_IP: c.ClientIP(),
-			CREATED_AT: time.Now().String(),
+			USERNAME:   DEFAULT_USERNAME,
+			EMAIL:      DEFAULT_EMAIL,
+			LOCATION:   DEFAULT_LOCATION,
+			CREATED_AT: DEFAULT_CREATED_AT,
+			DIAL_PORT:  DEFAULT_DIAL_PORT,
+			BIND_PORT:  DEFAULT_BIND_PORT,
+			HOST_ADDR:  DEFAULT_HOST_ADDR,
+			HOST_PORT:  DEFAULT_HOST_PORT,
+			PASSWORD:   DEFAULT_PASSWORD,
 		}
-
-		err := queue.SendToRedis(request, email) // Create key
-
+		queue.QueueLck.Lock()
+		err := queue.AddRequestToQueue(email+"::"+name+"::"+id, request)
+		queue.QueueLck.Unlock()
 		if err != nil {
 			log.Error(err)
 			c.AbortWithStatus(http.StatusInternalServerError)
@@ -68,8 +68,8 @@ func Connect() gin.HandlerFunc {
 func Login() gin.HandlerFunc {
 	return func(c *gin.Context) {
 
-		var user models.User
-		var foundUser *models.User
+		var user User
+		var foundUser *User
 
 		if err := c.BindJSON(&user); err != nil {
 			c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
@@ -102,7 +102,7 @@ func Login() gin.HandlerFunc {
 			}
 		}
 
-		token, _, err := helpers.GenerateAllTokens(email, name, foundUser.IsAdmin) // TODO: Return refresh token.
+		token, _, err := GenerateAllTokens(email, name, foundUser.IsAdmin) // TODO: Return refresh token.
 
 		if err != nil {
 			c.JSON(http.StatusInternalServerError, gin.H{"error": "Issue with JWT token creation"})

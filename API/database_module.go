@@ -1,13 +1,9 @@
-// Package database
-package database
+package API
 
 import (
 	"context"
 	"fmt"
 	"time"
-
-	"Nezha/API/helpers"
-	"Nezha/API/models"
 	log "github.com/sirupsen/logrus"
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/mongo"
@@ -36,7 +32,7 @@ func (d DatabaseModule) openCollection(collectionName string) *mongo.Collection 
 
 // getApps returns a Go Array of Strings and an error
 // The function checks the database for a set of apps that a particular user has access too.
-func (d DatabaseModule) GetApps(email string) ([]models.App, error) {
+func (d DatabaseModule) GetApps(email string) ([]App, error) {
 	var ctx, cancel = context.WithTimeout(context.Background(), 100*time.Second)
 	appCollection := d.openCollection("apps")
 	defer cancel()
@@ -45,8 +41,8 @@ func (d DatabaseModule) GetApps(email string) ([]models.App, error) {
 		return nil, err
 	}
 	defer cursor.Close(ctx)
-	var foundApp models.App
-	appList := []models.App{}
+	var foundApp App
+	appList := []App{}
 	for cursor.Next(ctx) {
 		err = cursor.Decode(&foundApp)
 		if err != nil {
@@ -76,18 +72,18 @@ func (d DatabaseModule) GetEmailCount(email string) (int64, error) {
 // FindUserByEmail returns a Models User and error.
 // The models User represents the user if they were fond
 // Erorr represents any errors encountered
-func (d DatabaseModule) FindUserByEmail(email string) (*models.User, error) {
+func (d DatabaseModule) FindUserByEmail(email string) (*User, error) {
 	var ctx, cancel = context.WithTimeout(context.Background(), 100*time.Second)
 	userCollection := d.openCollection("users")
 	defer cancel()
 	res := userCollection.FindOne(ctx, bson.M{"email": email})
-	var foundUser models.User
+	var foundUser User
 	err := res.Decode(&foundUser)
 	return &foundUser, err
 }
 
 // AddUser
-func (d DatabaseModule) AddUser(email string, name string, isAdmin bool) (*models.User, error) {
+func (d DatabaseModule) AddUser(email string, name string, isAdmin bool) (*User, error) {
 	var ctx, cancel = context.WithTimeout(context.Background(), 100*time.Second)
 	userCollection := d.openCollection("users")
 	defer cancel()
@@ -117,7 +113,7 @@ func (d DatabaseModule) CreateCollection(collectionName string) {
 }
 
 func DBinstance() *mongo.Client {
-	MongoDb := helpers.GetMongoURL()
+	MongoDb := GetMongoURL()
 
 	client, err := mongo.NewClient(options.Client().ApplyURI(MongoDb))
 

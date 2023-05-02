@@ -1,7 +1,6 @@
 // Package helpers implements different helper functions used in other areas of the project
 // helpers/environemnt_handler.go impelements handlers used to interact with env vars.
-package helpers
-
+package API
 import (
 	"log"
 	"os"
@@ -21,7 +20,7 @@ func checkExist(varName string) (string, bool) {
 func GetPort() string {
 	port, found := checkExist("PORT")
 	if !found {
-		port = "8000"
+		port = API_PORT
 	}
 	return port
 }

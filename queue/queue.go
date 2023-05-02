@@ -26,8 +26,9 @@ var (
 	workersOnline          []bool
 	masterID               int
 	maxSlaves              int
-	queueLck               *sync.Mutex
+	QueueLck               *sync.Mutex
 	UnableToDeleteRequests map[string]string
+	ActiveRequests [][]byte
 	createContainer bool
 	killQueue bool
 )
@@ -35,9 +36,9 @@ var (
 func initQueue(api_conn_options, ssh_serv_conn_options *redis.Options) bool {
 	api_connection, err1 := makeQueueConnection(api_conn_options, API_Q_CLI)
 	ssh_serv_connection, err2 := makeQueueConnection(ssh_serv_conn_options, SSH_Q_CLI)
-	queueLck = &sync.Mutex{}
-	CondVarEmpty = &sync.Cond{L: queueLck}
-	CondVarAvailable = &sync.Cond{L: queueLck}
+	QueueLck = &sync.Mutex{}
+	CondVarEmpty = &sync.Cond{L: QueueLck}
+	CondVarAvailable = &sync.Cond{L: QueueLck}
 	CondVarAllWorkersStopped = &sync.Cond{L: &sync.Mutex{}}
 	queue = Queue{
 		API_CLI:               api_connection,
@@ -181,7 +182,7 @@ func InitWorker(worker *QueueWorker, _ID int, isMaster, front, back bool) {
 	worker.SERVED = 0
 	worker.MASTER = isMaster
 	worker.ONLINE = true
-	worker.Lck = queueLck
+	worker.Lck = QueueLck
 	if !front && back {
 		worker.SIDE = QUEUE_BACKEND_WORKER //backend
 		worker.SSH_SERV_CLI = queue.SSH_SERV_CLI
@@ -217,7 +218,7 @@ func checkKillSignal() bool{
 			return  false
 		} 
 	}
-	fmt.Println(killSig)
+	// fmt.Println(killSig)
 	if killSig == QUEUE_KILL_SET{
 		return true
 	}
@@ -245,6 +246,7 @@ func BeginWork(worker *QueueWorker) {
 				worker.Lck.Unlock()
 				break
 			}
+
 
 			
 			//respond with connection success via API
@@ -293,12 +295,12 @@ func BeginWork(worker *QueueWorker) {
 			worker.Lck.Lock()
 			if !killQueue{
 				killQueue = checkKillSignal()
-				for i := 0; i < maxSlaves/2; i++ {
-					if !slaveWorkers[i].ONLINE{
-						InitWorker(&slaveWorkers[i], masterID+i+1, false, true, false) //front
-						go BeginWork(&slaveWorkers[i])
-					}
-				}
+				// for i := 0; i < maxSlaves/2; i++ {
+				// 	if !slaveWorkers[i].ONLINE{
+				// 		InitWorker(&slaveWorkers[i], masterID+i+1, false, true, false) //front
+				// 		go BeginWork(&slaveWorkers[i])
+				// 	}
+				// }
 				for i := maxSlaves / 2; i < maxSlaves; i++ {
 					if !slaveWorkers[i].ONLINE{
 						InitWorker(&slaveWorkers[i], masterID+i+1, false, false, true) // back
@@ -331,14 +333,14 @@ func BeginWork(worker *QueueWorker) {
 }
 
 func AllWorkersOffline() bool {
-	queueLck.Lock()
+	QueueLck.Lock()
 	for i := 0; i < maxSlaves; i++ {
 		if workersOnline[i] == true {
-			queueLck.Unlock()
+			QueueLck.Unlock()
 			return false
 		}
 	}
-	queueLck.Unlock()
+	QueueLck.Unlock()
 	return true
 }
 
@@ -368,10 +370,10 @@ func StartAllWorkers() bool {
 	InitWorker(&masterWorker, masterID, true, true, true) //both front and back, master
 	go BeginWork(&masterWorker)
 
-	for i := 0; i < maxSlaves/2; i++ {
-		InitWorker(&slaveWorkers[i], masterID+i+1, false, true, false) //front
-		go BeginWork(&slaveWorkers[i])
-	}
+	// for i := 0; i < maxSlaves/2; i++ {
+	// 	InitWorker(&slaveWorkers[i], masterID+i+1, false, true, false) //front
+	// 	go BeginWork(&slaveWorkers[i])
+	// }
 
 	for i := maxSlaves / 2; i < maxSlaves; i++ {
 		InitWorker(&slaveWorkers[i], masterID+i+1, false, false, true) // back

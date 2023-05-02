@@ -1,31 +1,20 @@
-package main
+package API
 
 import (
 	"time"
-
-	"Nezha/API/helpers"
-	"Nezha/API/queue"
-	"Nezha/API/routes"
 	"github.com/gin-contrib/cors"
 	"github.com/gin-gonic/gin"
-	log "github.com/sirupsen/logrus"
+	// log "github.com/sirupsen/logrus"
+
 )
 
-func main() {
-	err := queue.ConnectToRedis()
-	if err != nil {
-		log.Fatalf("%v", err)
-	}
+func RunAPI() {
 
-	port := helpers.GetPort()
-	if port == "" {
-		port = "8000"
-	}
 
 	router := gin.New()
 	router.Use(gin.Logger())
 	router.Use(cors.New(cors.Config{
-		AllowOrigins:     []string{"*"},
+		AllowOrigins:     []string{"*"}, //bad idea
 		AllowMethods:     []string{"*"},
 		AllowHeaders:     []string{"*"},
 		ExposeHeaders:    []string{"*"},
@@ -35,8 +24,8 @@ func main() {
 		},
 		MaxAge: 12 * time.Hour,
 	}))
-	routes.AuthRoutes(router)
-	routes.UserRoutes(router)
-
-	router.Run(":" + port)
+	AuthRoutes(router)
+	UserRoutes(router)
+	
+	router.Run(":" + API_PORT)
 }

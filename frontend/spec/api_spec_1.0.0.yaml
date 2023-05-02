@@ -67,7 +67,29 @@ paths:
               schema:
                 type: array
                 items:
-                  type: string
+                  schema:
+                    $ref: '#/components/schemas/app'
+  /app/connect/{id}:
+    get:
+      tags:
+      - apps
+      operationId: connectApp
+      responses:
+        "200":
+          description: Ok
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/app'
+    parameters:
+    - description: ""
+      explode: false
+      in: path
+      name: id
+      required: true
+      schema:
+        type: string
+      style: simple
 components:
   schemas:
     users_login_body:
@@ -75,3 +97,19 @@ components:
       properties:
         Token:
           type: string
+    app:
+      type: object
+      properties:
+        Id:
+          type: string
+
+        Name:
+          type: string
+        Host:
+          type: string
+        Port:
+          type: number
+        Users:
+          type: array
+          items:
+            type: string

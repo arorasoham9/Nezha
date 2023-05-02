@@ -4,12 +4,19 @@ import (
 	"time"
 
 	"github.com/arorasoham9/ECE49595_PROJECT/API/helpers"
+	"github.com/arorasoham9/ECE49595_PROJECT/API/queue"
 	"github.com/arorasoham9/ECE49595_PROJECT/API/routes"
 	"github.com/gin-contrib/cors"
 	"github.com/gin-gonic/gin"
+	log "github.com/sirupsen/logrus"
 )
 
 func main() {
+	err := queue.ConnectToRedis()
+	if err != nil {
+		log.Fatalf("%v", err)
+	}
+
 	port := helpers.GetPort()
 	if port == "" {
 		port = "8000"

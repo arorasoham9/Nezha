@@ -12,20 +12,24 @@ import (
 
 // A SignedDetails holds an email and it's encoded counterpart using JWT
 type SignedDetails struct {
-	Email string
+	Email   string
+	Name    string
+	IsAdmin bool
 	jwt.StandardClaims
 }
 
 //var userCollection *mongo.Collection = database.OpenCollection(database.Client, "user")
 
 // GenerateAllTokens generates both the detailed token and refresh token
-func GenerateAllTokens(email string) (signedToken string, signedRefreshToken string, err error) {
+func GenerateAllTokens(email string, name string, isAdmin bool) (signedToken string, signedRefreshToken string, err error) {
 	//fmt.Println(email)
 	var SECRET_KEY string = GetSecretKey()
 	tokenDuration := GetTokenDuration()
 	refreshTokenDuration := GetRefreshTokenDuration()
 	claims := &SignedDetails{
-		Email: email,
+		Email:   email,
+		Name:    name,
+		IsAdmin: isAdmin,
 		StandardClaims: jwt.StandardClaims{
 			ExpiresAt: time.Now().Local().Add(time.Hour * time.Duration(tokenDuration)).Unix(),
 		},

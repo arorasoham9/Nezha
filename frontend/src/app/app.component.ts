@@ -1,6 +1,6 @@
 import {  GoogleLoginProvider, SocialAuthService, SocialUser } from '@abacritt/angularx-social-login';
-import { Component, OnInit } from '@angular/core';
-import { AppsService, AuthenticationService, OpenAPI } from 'generated';
+import { Component, OnInit, ɵɵresolveBody } from '@angular/core';
+import { AppsService, AuthenticationService, OpenAPI, app, users_login_body } from 'generated';
 @Component({
   selector: 'app-root',
   templateUrl: './app.component.html',
@@ -11,7 +11,9 @@ export class AppComponent implements OnInit {
   title = 'frontend';
   user: SocialUser;
   loggedIn: boolean;
-  appList: Array<String>;
+  appList: Array<app>;
+  userLogin: users_login_body;
+  loading: boolean = false;
   private accessToken = '';
 
   constructor(private authService: SocialAuthService, private apiAuthService: AuthenticationService, private appService: AppsService ) { 
@@ -30,18 +32,30 @@ export class AppComponent implements OnInit {
 
   }
 
+  connect(id: string) {
+    this.appService.connectApp(id).subscribe(body => {
+      console.log(body)
+    })
+  }
+
   getToken(): void {
-    console.log("Getting token.");
-    console.log(this.user);
+    //console.log("Getting token.");
+    //console.log(this.user);
+    this.loading = true;
     OpenAPI.BASE = "http://localhost:8000"
     this.apiAuthService.login({Token: this.user.idToken}).subscribe(body=>{
-      OpenAPI.HEADERS = {"token": body};
-      console.log(body)
-      this.appService.getApps().subscribe(appList=>{
-        this.appList = appList;
-        console.log(this.appList)
-      })
+      this.userLogin = JSON.parse(JSON.stringify(body));
+      if (this.userLogin.Token) {
+        OpenAPI.HEADERS = {"token": this.userLogin.Token};
+        //console.log(body)
+        this.appService.getApps().subscribe(appList=>{
+          this.appList = appList;
+          this.loading= false;
+          //console.log(this.appList)
+        })
+      }
     })
+
   }
 
 

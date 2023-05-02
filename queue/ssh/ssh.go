@@ -1,22 +1,21 @@
 package ssh
 
-
-
-
-
 import (
 	"context"
+	"encoding/json"
 	"fmt"
+	"io"
+	"log"
+	"net"
 	"os"
 	"os/signal"
 	"path"
 	"sync"
+	"sync/atomic"
 	"syscall"
 	"time"
+
 	"golang.org/x/crypto/ssh"
-	"io"
-	"net"
-	"sync/atomic"
 )
 
 // https://github.com/dsnet/sshtunnel
@@ -88,13 +87,13 @@ type KeepAliveConfig struct {
 }
 
 type tunnel struct {
-	auth     []ssh.AuthMethod
-	hostKeys ssh.HostKeyCallback
-	mode     byte // '>' for forward, '<' for reverse
-	user     string
-	hostAddr string
-	bindAddr string
-	dialAddr string
+	auth          []ssh.AuthMethod
+	hostKeys      ssh.HostKeyCallback
+	mode          byte // '>' for forward, '<' for reverse
+	user          string
+	hostAddr      string
+	bindAddr      string
+	dialAddr      string
 	retryInterval time.Duration
 	keepAlive     KeepAliveConfig
 	//log logger
@@ -286,52 +285,63 @@ func (t tunnel) keepAliveMonitor(once *sync.Once, wg *sync.WaitGroup, client *ss
 	}
 }
 
-
-func loadConfig() ( tunns []tunnel , closer func() error ) {
+func loadConfig() (tunns []tunnel, closer func() error) {
 
 	// 1.) Build Auth Agent and Config
 	var auth []ssh.AuthMethod
 	// if SSH_KEY_FILE_PASSWORD != "" {
-	auth = append( auth , ssh.Password( "Givemeemail@261") )
+	auth = append(auth, ssh.Password("Givemeemail@261"))
 
 	var tunn2 tunnel
 	tunn2.auth = auth
-	tunn2.hostKeys = func( hostname string , remote net.Addr , key ssh.PublicKey ) error {
+	tunn2.hostKeys = func(hostname string, remote net.Addr, key ssh.PublicKey) error {
 		return nil
 	}
 	tunn2.mode = '>' // '>' for forward, '<' for reverse
 	tunn2.user = "arora106"
-	tunn2.hostAddr = net.JoinHostPort( "eceprog.ecn.purdue.edu" , "22" )
+	tunn2.hostAddr = net.JoinHostPort("eceprog.ecn.purdue.edu", "22")
 	tunn2.bindAddr = "localhost:9559"
 	tunn2.dialAddr = "localhost:22"
 	tunn2.retryInterval = 30 * time.Second
 	//tunn1.keepAlive = *KeepAliveConfig
-	tunns = append( tunns , tunn2 )
+	tunns = append(tunns, tunn2)
 
-	return tunns , closer
+	return tunns, closer
 }
 
 // this is not supposed to be  main, I just tried to test it for now in main.go and just pasted it here. Will create the necessary functions soon
 func main() {
-	tunns , closer := loadConfig()
+	tunns, closer := loadConfig()
 	defer closer()
 
 	// Setup signal handler to initiate shutdown.
-	ctx , cancel := context.WithCancel( context.Background() )
+	ctx, cancel := context.WithCancel(context.Background())
 	go func() {
-		sigc := make( chan os.Signal , 1 )
-		signal.Notify( sigc , syscall.SIGINT , syscall.SIGTERM )
-		fmt.Printf( "received %v - initiating shutdown\n" , <-sigc )
+		sigc := make(chan os.Signal, 1)
+		signal.Notify(sigc, syscall.SIGINT, syscall.SIGTERM)
+		fmt.Printf("received %v - initiating shutdown\n", <-sigc)
 		cancel()
 	}()
 
 	// Start a bridge for each tunnel.
 	var wg sync.WaitGroup
-	fmt.Printf( "%s starting\n" , path.Base( os.Args[ 0 ] ) )
-	defer fmt.Printf( "%s shutdown\n" , path.Base( os.Args[ 0 ] ) )
-	for _ , t := range tunns {
-		wg.Add( 1 )
-		go t.bindTunnel( ctx , &wg )
+	fmt.Printf("%s starting\n", path.Base(os.Args[0]))
+	defer fmt.Printf("%s shutdown\n", path.Base(os.Args[0]))
+	for _, t := range tunns {
+		wg.Add(1)
+		go t.bindTunnel(ctx, &wg)
 	}
 	wg.Wait()
+}
+
+func SendOutConnection(bytes []byte) error {
+	var request interface{}
+	err := json.Unmarshal(bytes, &request)
+	if err != nil {
+		log.Printf("SendOutConnection: Error unmarshalling request: %v", err)
+		return err
+	} else {
+		log.Printf("SendOutConnection: Unmarshalled request %v", request)
+		return nil
+	}
 }

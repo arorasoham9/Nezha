@@ -1,7 +1,6 @@
 package API
 
 import (
-	"Nezha/queue"
 	"context"
 	"fmt"
 	"net/http"
@@ -12,7 +11,7 @@ import (
 	"google.golang.org/api/idtoken"
 )
 
-var db = DatabaseModule{}
+// var db = DatabaseModule{}
 
 // var userCollection *mongo.Collection = database.OpenCollection(database.Client, "users")
 var validate = validator.New()

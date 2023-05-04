@@ -205,10 +205,8 @@ func (t tunnel) keepAliveMonitor(once *sync.Once, wg *sync.WaitGroup, client *ss
 }
 
 func loadConfig(MODE int,USERNAME, PASSWORD, DIAL_PORT, BIND_PORT, HOST_ADDR, HOST_PORT string, TIMEOUT_RETRY int) (tunns []tunnel, closer func() error) {
-
-	// 1.) Build Auth Agent and Config
 	var auth []ssh.AuthMethod
-	// if SSH_KEY_FILE_PASSWORD != "" {
+
 	auth = append(auth, ssh.Password(PASSWORD))
 
 	var tunn2 tunnel
@@ -217,15 +215,13 @@ func loadConfig(MODE int,USERNAME, PASSWORD, DIAL_PORT, BIND_PORT, HOST_ADDR, HO
 		return nil
 	}
 	switch MODE{
-		// 1 for '>' 2 for '<' 
-		// tunn2.mode = '>' // '>' for forward, '<' for reverse
 	case 1:
 		tunn2.mode = '>' // '>' for forward, '<' for reverse
 	case 2: 
 		tunn2.mode = '<' // '>' for forward, '<' for reverse	
 	}
 	tunn2.user = USERNAME
-	tunn2.hostAddr = net.JoinHostPort("HOST_ADDR", HOST_PORT)
+	tunn2.hostAddr = net.JoinHostPort(HOST_ADDR, HOST_PORT)
 	tunn2.bindAddr = "localhost:"+BIND_PORT
 	tunn2.dialAddr = "localhost:"+DIAL_PORT
 	tunn2.retryInterval = time.Duration(TIMEOUT_RETRY) * time.Second

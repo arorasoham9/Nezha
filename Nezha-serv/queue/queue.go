@@ -1,36 +1,37 @@
 package queue
 
 import (
+	d "Nezha-serv/dock"
+	ssh "Nezha-serv/ssh"
 	"encoding/json"
 	"errors"
 	"fmt"
 	"log"
-	ssh "Nezha/ssh"
-	"sync"
-	d "Nezha/dock"
-	"time"
 	"os"
+	"sync"
+	"time"
+
 	"github.com/go-redis/redis"
 )
 
 var (
-	queue                  Queue //singleton implementation
-	Queue_container_name   string
-	CurrentKey             string
-	masterWorker           QueueWorker
-	slaveWorkers           []QueueWorker
-	CondVarEmpty           *sync.Cond
-	CondVarAvailable       *sync.Cond
+	queue                    Queue //singleton implementation
+	Queue_container_name     string
+	CurrentKey               string
+	masterWorker             QueueWorker
+	slaveWorkers             []QueueWorker
+	CondVarEmpty             *sync.Cond
+	CondVarAvailable         *sync.Cond
 	CondVarAllWorkersStopped *sync.Cond
-	masterOnline           bool
-	workersOnline          []bool
-	masterID               int
-	maxSlaves              int
-	QueueLck               *sync.Mutex
-	UnableToDeleteRequests map[string]string
-	ActiveRequests [][]byte
-	createContainer bool
-	killQueue bool
+	masterOnline             bool
+	workersOnline            []bool
+	masterID                 int
+	maxSlaves                int
+	QueueLck                 *sync.Mutex
+	UnableToDeleteRequests   map[string]string
+	ActiveRequests           [][]byte
+	createContainer          bool
+	killQueue                bool
 )
 
 func initQueue(api_conn_options, ssh_serv_conn_options *redis.Options) bool {
@@ -52,11 +53,22 @@ func initQueue(api_conn_options, ssh_serv_conn_options *redis.Options) bool {
 }
 func MakeQueue(api_conn_options, ssh_serv_conn_options *redis.Options, _createContainer bool) error {
 	createContainer = _createContainer
+
 	if createContainer {
 		var make_err error
 		if Queue_container_name != "" {
-			d.StopOneContainer(Queue_container_name)
-			d.RemoveOneContainer(Queue_container_name)
+			make_err = d.StopOneContainer(Queue_container_name)
+			if make_err != nil {
+				fmt.Println("Could not stop existing running container.", make_err)
+			}
+			make_err = d.RemoveOneContainer(Queue_container_name)
+			if make_err != nil {
+				fmt.Println("Could not remove exisiting running container.", make_err)
+			}
+		}
+		make_err = d.StopRemoveAllContainers(QUEUE_CONTAINER_IMAGE)
+		if make_err != nil {
+			fmt.Println("Could not stop and remove exisiting containers.", make_err)
 		}
 		Queue_container_name, make_err = d.CreateNewContainer(QUEUE_CONTAINER_IMAGE, QUEUE_CONTAINER_MACHINE_PORT, QUEUE_CONTAINER_PORT)
 		if make_err != nil {
@@ -116,7 +128,6 @@ func ShutDownQueue(force bool) int {
 	queue.API_CLI.Close()
 	queue.SSH_SERV_CLI.Close()
 
-
 	shutDownCheck := (d.StopOneContainer(Queue_container_name) == nil)
 	if d.RemoveOneContainer(Queue_container_name) != nil {
 		fmt.Println("Queue container stopped not removed.")
@@ -137,7 +148,6 @@ func RestartQueue(force bool) int {
 	if EmptyQueue() != nil {
 		return QUEUE_RESTART_FAIL_COULD_NOT_EMPTY_QUEUE
 	}
-
 
 	err := d.RestartContainer(Queue_container_name)
 	if err != nil {
@@ -209,21 +219,22 @@ func parseRequestJSON(rqst []byte) (Queue_Request, error) {
 	}
 	return request, nil
 }
+
 //This function is simple but cruicial. ATM the master node checks for the KILL_SIGNAL ENV VAR  to know if the queue processes need to quit or no
 // if the env var does not exist, it creates one.
-func checkKillSignal() bool{
+func checkKillSignal() bool {
 	killSig, exists := os.LookupEnv(QUEUE_KILL_SIGNAL_ENV_VAR)
-	if !exists{
-		if os.Setenv(QUEUE_KILL_SIGNAL_ENV_VAR, QUEUE_KILL_UNSET ) != nil{
-			return  false
-		} 
+	if !exists {
+		if os.Setenv(QUEUE_KILL_SIGNAL_ENV_VAR, QUEUE_KILL_UNSET) != nil {
+			return false
+		}
 	}
 	// fmt.Println(killSig)
-	if killSig == QUEUE_KILL_SET{
+	if killSig == QUEUE_KILL_SET {
 		return true
 	}
-	
-	if killSig == QUEUE_KILL_UNSET{
+
+	if killSig == QUEUE_KILL_UNSET {
 		return false
 	}
 	return false
@@ -242,13 +253,11 @@ func BeginWork(worker *QueueWorker) {
 		for {
 			worker.Lck.Lock()
 
-			if killQueue{
+			if killQueue {
 				worker.Lck.Unlock()
 				break
 			}
 
-
-			
 			//respond with connection success via API
 
 			worker.CondVarAvailable.Signal()
@@ -258,11 +267,11 @@ func BeginWork(worker *QueueWorker) {
 	case QUEUE_BACKEND_WORKER:
 		for {
 			worker.Lck.Lock()
-			if killQueue{
+			if killQueue {
 				worker.Lck.Unlock()
 				break
 			}
-			
+
 			if QueueIsEmpty() {
 				worker.CondVarAvailable.Wait()
 			}
@@ -278,7 +287,7 @@ func BeginWork(worker *QueueWorker) {
 			}
 			go ssh.SendOutConnection(rqst, ID)
 			time.Sleep(time.Second * 10)
-			if ssh.UnFulfilledRequests[ID] >= ssh.SSH_NUM_TIMOUT{
+			if ssh.UnFulfilledRequests[ID] >= ssh.SSH_NUM_TIMOUT {
 				//respond with a error via API
 			}
 			if RemoveRequestFromQueue(ID) != nil {
@@ -293,7 +302,7 @@ func BeginWork(worker *QueueWorker) {
 	case QUEUE_MASTER_WORKER:
 		for {
 			worker.Lck.Lock()
-			if !killQueue{
+			if !killQueue {
 				killQueue = checkKillSignal()
 				// for i := 0; i < maxSlaves/2; i++ {
 				// 	if !slaveWorkers[i].ONLINE{
@@ -302,18 +311,18 @@ func BeginWork(worker *QueueWorker) {
 				// 	}
 				// }
 				for i := maxSlaves / 2; i < maxSlaves; i++ {
-					if !slaveWorkers[i].ONLINE{
+					if !slaveWorkers[i].ONLINE {
 						InitWorker(&slaveWorkers[i], masterID+i+1, false, false, true) // back
 						go BeginWork(&slaveWorkers[i])
 					}
 				}
 			}
 			worker.Lck.Unlock()
-			}
-		
+		}
+
 	}
 	worker.Lck.Lock()
-	if !worker.MASTER{
+	if !worker.MASTER {
 		workersOnline[worker.ID-masterID-1] = false
 	}
 	worker.Lck.Unlock()
@@ -326,7 +335,7 @@ func BeginWork(worker *QueueWorker) {
 	worker.MASTER = false
 	worker.ONLINE = false
 	worker.Lck = nil
-	
+
 	if AllWorkersOffline() && killQueue {
 		CondVarAllWorkersStopped.Signal()
 	}
@@ -384,13 +393,13 @@ func StartAllWorkers() bool {
 	return true
 }
 
-func BeginQueueOperation( ) error {
-	
-	if QUEUE_MAX_SLAVES  <= 0 || QUEUE_MASTER_ID <= 0 {
+func BeginQueueOperation() error {
+
+	if QUEUE_MAX_SLAVES <= 0 || QUEUE_MASTER_ID <= 0 {
 		return errors.New("Wrong MaxSlaves or Master ID argument.")
 	}
 
-	maxSlaves = QUEUE_MAX_SLAVES  + (QUEUE_MAX_SLAVES  % 2) //to ensure we have equal slaves on each side of the queue.
+	maxSlaves = QUEUE_MAX_SLAVES + (QUEUE_MAX_SLAVES % 2) //to ensure we have equal slaves on each side of the queue.
 	masterID = QUEUE_MASTER_ID
 	d.InitDock()
 	err := MakeQueue(

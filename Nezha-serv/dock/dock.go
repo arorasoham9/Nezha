@@ -92,7 +92,7 @@ func StopOneContainer(containerID string)error{
 	return nil
 }
 
-func StopAllContainers()error{
+func StopRemoveAllContainers(image string)error{
 
 	containers, err := GetAllContainers()
 	if err != nil {
@@ -102,12 +102,18 @@ func StopAllContainers()error{
 	}
 
 	for _, container := range containers {
-		fmt.Print("Stopping container ", container.ID[:10], "... \n")
-		noWaitTimeout := 0 // to not wait for the container to exit gracefully
-		if err := cli.ContainerStop(ctx, container.ID, containertypes.StopOptions{Timeout: &noWaitTimeout}); err != nil {
-			fmt.Println("Container ID:", container.ID, "could not be stopped.")
-			return err
-		}
+		if container.Image == image {
+			fmt.Print("Stopping container ", container.ID[:10], "... \n")
+			noWaitTimeout := 0 // to not wait for the container to exit gracefully
+			
+			if err := cli.ContainerStop(ctx, container.ID, containertypes.StopOptions{Timeout: &noWaitTimeout}); err != nil {
+				fmt.Println("Container ID:", container.ID, "could not be stopped.")
+				return err
+			}
+			err = RemoveOneContainer(container.ID); if err!=nil{
+				return err
+			}
+	}
 	}
 	cli.Close()
 	return nil

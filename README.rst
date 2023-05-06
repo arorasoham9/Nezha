@@ -1,8 +1,7 @@
-Nezha - We don't trust
+Nezha - We don't trust!
 ----------------------
 
-<Add desciption here>
-
+Nezha is an application deployment and secure access platform based on the Zero-Trust security framework for any application, irrespective of scale, complexity, and user size.
 
 Installation
 ------------
@@ -13,9 +12,11 @@ Run your own Nezha server
 +++++++++++++++++++++++++++++++
 On a k8s cluster install and configure Nezha server using the following instructions.
 NOTE: These installation steps assume that you have Helm and kubectl - the package manager and command line tool for k8s - installed and setup already.
+
     1.  Add Nezha's Helm repository
         ::
             helm repo add nezha-helm https://arorasoham9.github.io/nezha-helm/
+
     2.  Install Nezha Server
         ::
             helm install Nezha-server nezha-helm/Nezha-server
@@ -24,7 +25,7 @@ NOTE: These installation steps assume that you have Helm and kubectl - the packa
         ::
             kubectl get svc -n Nezha-helm
         Save the external IP to the service named "Nezha-helm-port-forwarding" for later use, when setting up the Nezha client.
-    Uninstall Nezha Server::
+    You may uninstall Nezha Server using the following command::
 
         helm uninstall Nezha-server
 

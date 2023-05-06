@@ -1,31 +1,55 @@
-FROM golang:latest AS builder
+# syntax=docker/dockerfile:1
+FROM golang:latest as layer1
+WORKDIR /Nezha-serv
 
-ADD . /app
-WORKDIR /app
+COPY basic/* basic/
+# COPY bin/* bin/
+COPY cmd/* cmd/
+COPY scripts/* scripts/
+COPY template/* template/
+COPY *.mod .
+COPY *.sum .
+COPY *.go .
+# COPY *.yaml ./
+COPY html/* html/
+# COPY Dockerfile .
 
-RUN go mod download
-RUN go build -o /main .
+COPY Nezha-serv-api/* Nezha-serv-api/
+RUN GOOS=linux  go build  -o ./bin/app_linux .
+RUN GOOS=darwin  go build  -o ./bin/app_darwin .
+RUN ls ./bin
 
-FROM ubuntu:latest
-# Needed to avoid `x509: a certificate signed by unknown authority`
-COPY --from=builder /main ./
-
-ENTRYPOINT ["./main"]
-EXPOSE 8000
+FROM ubuntu:latest as base
 
 
-#dockerfile from API is below
+COPY --from=layer1 /Nezha-serv /Nezha-serv
+EXPOSE 443
+EXPOSE 9000
+# EXPOSE 8443
+WORKDIR /Nezha-serv
+RUN ls ./bin
+# RUN apk add --no-cache --upgrade bash
+RUN apt-get install --only-upgrade bash
 
-# FROM golang:latest AS builder
+SHELL ["/bin/bash", "-c"]
+RUN apt-get update -y
+RUN apt-get install openssl -y
 
-# ADD . /app
-# WORKDIR /app
+# #for lets encrypt
+# RUN apt update
+# RUN apt install snapd -y
+# RUN snap install core; sudo snap refresh core
+# RUN apt-get remove certbot
+# RUN snap install --classic certbot
+# RUN ln -s /snap/bin/certbot /usr/bin/certbot
 
-# RUN go mod download
-# RUN go build -o /main .
 
-# FROM ubuntu:latest
-# COPY --from=builder /etc/ssl/certs/ca-certificates.crt /etc/ssl/certs/
-# COPY --from=builder /main ./
-# ENTRYPOINT ["./main"]
-# EXPOSE 8000
+#for linux image    
+RUN chmod +x ./bin/app_linux
+RUN chmod +x ./bin/app_darwin
+RUN ls -altr ./bin
+
+RUN chmod +x  ./scripts/Nezha_run_start.sh
+RUN chmod +x  ./scripts/Nezha_run_start_api.sh
+
+CMD [ "./scripts/Nezha_run.sh"]

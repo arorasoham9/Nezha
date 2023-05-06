@@ -1,0 +1,170 @@
+kind: Namespace
+apiVersion: v1
+metadata:
+  name: Nezha
+  labels:
+    name: Nezha
+
+---
+apiVersion: storage.k8s.io/v1
+kind: StorageClass
+metadata:
+  name: Nezha
+provisioner: docker.io/hostpath
+reclaimPolicy: Delete
+volumeBindingMode: Immediate
+---
+apiVersion: v1
+kind: PersistentVolume
+metadata:
+  name: Nezha
+  namespace: Nezha
+spec:
+  capacity:
+    storage: 5Gi
+  accessModes:
+    - ReadWriteMany
+  hostPath:
+    path: "/mnt/Nezha"
+  storageClassName: Nezha
+---
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: Nezha
+  namespace: Nezha
+spec:
+  storageClassName: Nezha
+  accessModes:
+    - ReadWriteMany
+  resources:
+    requests:
+      storage: 5Gi
+  volumeMode: Filesystem
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: Nezha-api
+  namespace: Nezha
+  labels:
+    app: Nezha-api
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app: Nezha-api
+  template:
+    metadata:
+      labels:
+        app: Nezha-api
+    spec:
+      restartPolicy: Always
+      containers:
+        - name: Nezha-api
+          image: arorasoham9/Nezha-api:latest
+          imagePullPolicy: Always
+          ports:
+            - containerPort: 9000
+          volumeMounts:
+            - mountPath: "/mnt/Nezha"
+              name: Nezha
+      volumes:
+        - name: Nezha
+          persistentVolumeClaim:
+            claimName: Nezha
+---
+# apiVersion: v1
+# kind: Pod
+# metadata:
+#   name: Nezha-api
+#   namespace: Nezha
+#   labels:
+#     app: Nezha-api
+# spec:
+#   selector:
+#     matchLabels:
+#       app: Nezha
+#   volumes:
+#     - name: Nezha
+#       persistentVolumeClaim:
+#         claimName: Nezha
+#   containers:
+#     - name: Nezha-api
+#       image: arorasoham9/Nezha-api:latest
+#       # command: ["/bin/sleep", "3650d"]
+#       imagePullPolicy: Always
+#       ports:
+#         - containerPort: 443
+#       volumeMounts:
+#         - mountPath: "/mnt/Nezha"
+#           name: Nezha
+# ---
+kind: NetworkPolicy
+apiVersion: networking.k8s.io/v1
+metadata:
+  name: allow-all
+  namespace: Nezha
+spec:
+  podSelector:
+    matchLabels:
+      app: Nezha
+  ingress:
+    - {}
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: Nezha
+  namespace: Nezha
+  labels:
+    app: Nezha
+spec:
+  replicas: 3
+  selector:
+    matchLabels:
+      app: Nezha
+  template:
+    metadata:
+      labels:
+        app: Nezha
+    spec:
+      restartPolicy: Always
+      containers:
+        - name: Nezha
+          image: arorasoham9/Nezha:latest
+          imagePullPolicy: Always
+          ports:
+            - containerPort: 443
+          volumeMounts:
+            - mountPath: "/mnt/Nezha"
+              name: Nezha
+      volumes:
+        - name: Nezha
+          persistentVolumeClaim:
+            claimName: Nezha
+---
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: Nezha
+  namespace: Nezha
+  annotations:
+    # kubernetes.io/ingress.class: "nginx"
+    nginx.ingress.kubernetes.io/backend-protocol: "HTTPS"
+    nginx.ingress.kubernetes.io/ssl-redirect: "true"
+    nginx.ingress.kubernetes.io/ssl-passthrough: "true"
+spec:
+  # ingressClassName: Nezha
+  rules:
+    - http:
+        paths:
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: Nezha
+                port:
+                  number: 443
+---
+

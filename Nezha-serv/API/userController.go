@@ -40,25 +40,25 @@ func Connect() gin.HandlerFunc {
 		email := c.GetString("email")
 		name := c.GetString("name")
 
-		request := queue.Queue_Request{
-			USERNAME:   DEFAULT_USERNAME,
-			EMAIL:      DEFAULT_EMAIL,
-			LOCATION:   DEFAULT_LOCATION,
-			CREATED_AT: DEFAULT_CREATED_AT,
-			DIAL_PORT:  DEFAULT_DIAL_PORT,
-			BIND_PORT:  DEFAULT_BIND_PORT,
-			HOST_ADDR:  DEFAULT_HOST_ADDR,
-			HOST_PORT:  DEFAULT_HOST_PORT,
-			PASSWORD:   DEFAULT_PASSWORD,
-		}
-		queue.QueueLck.Lock()
-		err := queue.AddRequestToQueue(email+"::"+name+"::"+id, request)
-		queue.QueueLck.Unlock()
-		if err != nil {
-			log.Error(err)
-			c.AbortWithStatus(http.StatusInternalServerError)
-			return
-		}
+		// request := queue.Queue_Request{
+		// 	USERNAME:   DEFAULT_USERNAME,
+		// 	EMAIL:      DEFAULT_EMAIL,
+		// 	LOCATION:   DEFAULT_LOCATION,
+		// 	CREATED_AT: DEFAULT_CREATED_AT,
+		// 	DIAL_PORT:  DEFAULT_DIAL_PORT,
+		// 	BIND_PORT:  DEFAULT_BIND_PORT,
+		// 	HOST_ADDR:  DEFAULT_HOST_ADDR,
+		// 	HOST_PORT:  DEFAULT_HOST_PORT,
+		// 	PASSWORD:   DEFAULT_PASSWORD,
+		// }
+		// queue.QueueLck.Lock()
+		// err := queue.AddRequestToQueue(email+"::"+name+"::"+id, request)
+		// queue.QueueLck.Unlock()
+		// if err != nil {
+		// 	log.Error(err)
+		// 	c.AbortWithStatus(http.StatusInternalServerError)
+		// 	return
+		// }
 
 		c.Status(http.StatusOK)
 	}

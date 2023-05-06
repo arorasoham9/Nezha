@@ -1,0 +1,32 @@
+kind: Service
+apiVersion: v1
+metadata:
+  name: Nezha-port-forwarding
+  namespace: Nezha
+spec:
+  # Make the service externally visible via the node
+  type: LoadBalancer
+  ports:
+    # Which port on the node is the service available through?
+    - name: "Nezha-forwarding-port"
+      # nodePort: 3212
+      port: 443
+      targetPort: 443
+
+  selector:
+    app: Nezha
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: Nezha-api
+  namespace: Nezha
+spec:
+  type: LoadBalancer
+  ports:
+    - name: "Nezha-api"
+      # nodePort: 3212
+      port: 9000
+      targetPort: 9000
+  selector:
+    app: Nezha-api

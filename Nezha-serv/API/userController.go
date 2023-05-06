@@ -20,7 +20,7 @@ var validate = validator.New()
 func GetApps() gin.HandlerFunc {
 	return func(c *gin.Context) {
 		email := c.GetString("email")
-		// name := c.GetString("name")
+		name := c.GetString("name")
 		fmt.Println(email)
 		appList, _ := db.GetApps(email)
 

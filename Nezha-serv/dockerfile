@@ -3,21 +3,21 @@ FROM golang:latest as layer1
 WORKDIR /Nezha-serv
 
 COPY basic/* basic/
-# COPY bin/* bin/
-COPY cmd/* cmd/
+COPY bin/* bin/
+# COPY cmd/* cmd/
 COPY scripts/* scripts/
-COPY template/* template/
+# COPY template/* template/
 COPY *.mod .
 COPY *.sum .
 COPY *.go .
 # COPY *.yaml ./
-COPY html/* html/
+# COPY html/* html/
 # COPY Dockerfile .
 
-COPY Nezha-serv-api/* Nezha-serv-api/
-RUN GOOS=linux  go build  -o ./bin/app_linux .
-RUN GOOS=darwin  go build  -o ./bin/app_darwin .
-RUN ls ./bin
+# COPY Nezha-serv-api/* Nezha-serv-api/
+# RUN GOOS=linux  go build  -o ./bin/app_linux .
+# RUN GOOS=darwin  go build  -o ./bin/app_darwin .
+# RUN ls ./bin
 
 FROM ubuntu:latest as base
 
@@ -27,7 +27,7 @@ EXPOSE 443
 EXPOSE 9000
 # EXPOSE 8443
 WORKDIR /Nezha-serv
-RUN ls ./bin
+# RUN ls ./bin
 # RUN apk add --no-cache --upgrade bash
 RUN apt-get install --only-upgrade bash
 
@@ -52,4 +52,4 @@ RUN ls -altr ./bin
 RUN chmod +x  ./scripts/Nezha_run_start.sh
 RUN chmod +x  ./scripts/Nezha_run_start_api.sh
 
-CMD [ "./scripts/Nezha_run.sh"]
+# CMD [ "./scripts/Nezha_run.sh"]

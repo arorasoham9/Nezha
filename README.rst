@@ -3,79 +3,50 @@ ECE49595  We don't trust
 Guide for Nezha
 =========================
 
-Araali GoShelly is an open source tool that helps security teams safely test their detect and response readiness (the fire drill for SIEM/SOAR/EDR/NDR/XDR investment) 
-for backdoors. This is typical when supply chain vulnerabilities like remote code execution (RCE) are exploited and represents a doomsday scenario where an attacker
-has full remote control capabilities based on the backdoor.
+<Add desciption here>
 
 
 Installation
 ------------
 
-Nezha requires a Kubernetes environment running Kubectl the command line tool for Kubernetes, and Helm, the package manager for Kubernetes.
+Nezha requires a Kubernetes environment running Kubectl and Helm, the command line tool and the package manager for Kubernetes.
 
-Setup a backdoor service
-_________________________
-
-To use your own backdoor server
+Run your own Nezha server
 +++++++++++++++++++++++++++++++
-On a k8s cluster install and configure GoShelly server using the following instructions.
+On a k8s cluster install and configure Nezha server using the following instructions.
 NOTE: These installation steps assume that you have Helm and kubectl - the package manager and command line tool for k8s - installed and setup already.
-    1.  Add Araali's Helm repository
+    1.  Add Nezha's Helm repository
         ::
-            helm repo add araali-helm https://araalinetworks.github.io/araali-helm/
-    2.  Install GoShelly Server
+            helm repo add nezha-helm https://arorasoham9.github.io/nezha-helm/
+    2.  Install Nezha Server
         ::
-            helm install goshelly-server araali-helm/goshelly-server
+            helm install Nezha-server nezha-helm/Nezha-server
 
     3.  Get the loadbalancer external IP for the client to connect to
         ::
-            kubectl get svc -n goshelly-helm
-        Save the external IP to the service named "goshelly-helm-port-forwarding" for later use, when setting up the GoShelly client.
-    Uninstall GoShelly Server::
+            kubectl get svc -n Nezha-helm
+        Save the external IP to the service named "Nezha-helm-port-forwarding" for later use, when setting up the Nezha client.
+    Uninstall Nezha Server::
 
-        helm uninstall goshelly-server
+        helm uninstall Nezha-server
 
-To use Araali's backdoor server
-++++++++++++++++++++++++++++++++
-Nothing. It's already running. Follow the instructions below to dial to our backdoor server using GoShelly Client.
-
-
-Setup GoShelly Client
+Setup Nezha Client CLI
 _____________________
-On the machine, you wish to test the attack response readiness for, install and configure GoShelly Client 
-using the following instructions.
-    1.  Download GoShelly Client
+On the machine, install and configure Nezha Client using the following instructions.
+    1.  Download Nezha Client
         On Linux::
 
-            curl -O https://s3-us-west-2.amazonaws.com/araalinetworks.cf/goshelly_linux 
-
-        On Mac::
-
-            curl -O https://s3-us-west-2.amazonaws.com/araalinetworks.cf/goshelly_darwin 
+            curl -O https://link.storjshare.io/s/juzbdy3atfth2i3tdxagot66ujda/nezha/Nezha
 
     2.  Make it executable
         ::
-            chmod +x goshelly_*
+            chmod +x Nezha*
 
-    3.  Run the below command to make the GoShelly Client dial out to the backdoor server
+    3.  Run the below command to learn how to connet to your deployed applications.
 
-        * If you choose to use Araali's backdoor service use the command as shown below.
-            For Linux::
-
-                ./goshelly_linux assess
-            For MacOS::
-
-                ./goshelly_darwin assess
+                ./Nezha --help
 
 
-        * If you choose to use your own backdoor service, include the loadbalancer external IP address, we previously noted, using the IP flag in the assess command as shown below.
-            For Linux::
-
-                ./goshelly_linux assess --IP <IP_ADDRESS>
-            For MacOS::
-
-                ./goshelly_darwin assess --IP <IP_ADDRESS>
-    4.  Wait for GoShelly to run on your system and return results. You may also check your Araali Console to view GoShelly in action.
 
 
 

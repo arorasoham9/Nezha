@@ -35,8 +35,32 @@ Using the loadbalancer HOST:IP or domain generatred during server setup go to th
 
     https://<LoadBalancer HOST:IP |Domain>:<PORT>/portal/
 
+A welcome screen like below should be seen, hit the login or signup button on the top right.
+.. image:: images/page1.png
+  :width: 400
+  :alt: Welcome Page
+
+A login screen like below should be seen, enter your credentials and hit login
+.. image:: images/page1.png
+  :width: 400
+  :alt: Login Page
+
+One logged in, you should be able to see a dashboard like the template below::
+.. image:: images/page1.png
+  :width: 400
+  :alt: Dashboard Page
+
+Choose the application you wish to connect to and hit connect::
+.. image:: images/page1.png
+  :width: 400
+  :alt: Open Web Terminal
+
 Using the following API endpoints
 +++++++++++++++++++++++++++++++++
 
 We provide a number of and everincreasing API endpoints to allow you to incorporate Nezha in your own proprietary software or create Custom Resource Definitions.
 NOTE: These endpoints will return a HTTP Status Code 503-Service Unavailable response if any authentication TOKENS or CERTS are missing or are incorrect.
+You may use any of the following endpoints to interact with Nezha and connect to your application::
+.. image:: images/page1.png
+  :width: 400
+  :alt: Open Web Terminal

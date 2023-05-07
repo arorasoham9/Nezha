@@ -28,7 +28,7 @@ Run the following command to connect to a particular application
 Using the Web Terminal
 ++++++++++++++++++++++
 
-Using the loadbalancer HOST:IP or domain generatred during server setup go to the following route and follow the instructions as they appear::
+Using the loadbalancer HOST:IP or domain generatred during server setup go to the following route and follow the instructions as they appear:
 
     https://<LoadBalancer HOST:IP |Domain>:<PORT>/portal/
 

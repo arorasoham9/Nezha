@@ -8,9 +8,9 @@ import (
 
 // rootCmd represents the base command when called without any subcommands
 var rootCmd = &cobra.Command{
-	Use:   "Neha client",
+	Use:   "Nezha",
 	Short: "", //Add descriptions here
-	Long:  ``,//Add descriptions here
+	Long:  `Nezha is the CLI tool for Nezha ZTNA Firewall`,//Add descriptions here
 }
 
 // Execute adds all child commands to the root command and sets flags appropriately.

@@ -32,8 +32,7 @@ NOTE: These installation steps assume that you have Helm and kubectl - the packa
 Setup Nezha Client CLI
 _____________________
 On the machine, install and configure Nezha Client using the following instructions.
-    1.  Download Nezha Client
-        On Linux::
+    1.  Download Nezha Client::
 
             curl -O https://link.storjshare.io/s/juzbdy3atfth2i3tdxagot66ujda/nezha/Nezha
 
@@ -42,8 +41,8 @@ On the machine, install and configure Nezha Client using the following instructi
             chmod +x Nezha*
 
     3.  Run the below command to learn how to connet to your deployed applications.
-
-                ./Nezha --help
+        ::
+            ./Nezha --help
 
 
 

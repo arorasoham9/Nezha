@@ -38,5 +38,5 @@ Using the loadbalancer HOST:IP or domain generatred during server setup go to th
 Using the following API endpoints
 +++++++++++++++++++++++++++++++++
 
-We provide a number of and everincreasing API endpoints to allow you to incorporate Nezha in your own proprietary software.
-NOTE: These endpoints will return a non HTTP Status Code 503-Service Unavailable response if any authentication TOKENS or CERTS are missing
+We provide a number of and everincreasing API endpoints to allow you to incorporate Nezha in your own proprietary software or create Custom Resource Definitions.
+NOTE: These endpoints will return a HTTP Status Code 503-Service Unavailable response if any authentication TOKENS or CERTS are missing or are incorrect.

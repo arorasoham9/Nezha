@@ -14,16 +14,19 @@ Using the Nezha Client CLI
 NOTE: The following instructions assume that you have a deployment running somewhere in a Kubernetes environment using the Nezha Helm chart provided in our repository
 and have available a loadbalancer HOST:IP or Domain available to connect to and have downloaded the Nezha client CLI. If not, follow the instructions in our readME to get started.
 
-    ./Nezha login <LoadBalancer HOST:IP | Domain>
+    1.  Run the following command to login into your host machine
+        ::
+            ./Nezha login <LoadBalancer HOST:IP | Domain>   
 
-This is a one time command and you would not be required to run it again provided you do not delete any config files or want to login as another user.
-Answer the prompts as they appear and you should be set up to connect to your applications. Run the following command to list your currently running applications.
-
-    ./Nezha list
-
-Run the following command to connect to a particular application
-
-    ./Nezha <application identification ID>
+This is a one time command and you would not be required to run it again provided you do not delete any config files or want to login as another user or into another host machine.
+Answer the prompts as they appear and you should be set up to connect to your applications. 
+    
+    1.  Run the following command to list your currently running applications.
+        ::
+            ./Nezha list
+    2.  Run the following command to connect to a particular application
+        ::
+            ./Nezha <application identification ID>
 
 Using the Web Terminal
 ++++++++++++++++++++++

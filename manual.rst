@@ -21,17 +21,17 @@ and have available a loadbalancer HOST:IP or Domain available to connect to and 
 This is a one time command and you would not be required to run it again provided you do not delete any config files or want to login as another user or into another host machine.
 Answer the prompts as they appear and you should be set up to connect to your applications. 
     
-    1.  Run the following command to list your currently running applications.
+    2.  Run the following command to list your currently running applications.
         ::
             ./Nezha list
-    2.  Run the following command to connect to a particular application
+    3.  Run the following command to connect to a particular application.
         ::
             ./Nezha <application identification ID>
 
 Using the Web Terminal
 ++++++++++++++++++++++
 
-Using the loadbalancer HOST:IP or domain generatred during server setup go to the following route and follow the instructions as they appear:
+Using the loadbalancer HOST:IP or domain generatred during server setup go to the following route and follow the instructions as they appear::
 
     https://<LoadBalancer HOST:IP |Domain>:<PORT>/portal/
 

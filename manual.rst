@@ -37,28 +37,28 @@ Using the loadbalancer HOST:IP or domain generatred during server setup go to th
 
 A welcome screen like below should be seen, hit the login or signup button on the top right.
 
-.. image:: https://raw.githubusercontent.com/arorasoham9/Nezha/images/page5.png?sanitize=true
+.. image:: https://raw.githubusercontent.com/arorasoham9/Nezha/main/images/page5.png?sanitize=true
   :width: 650
   :height: 300
   :alt: Welcome Page
 
 A login screen like below should be seen, enter your credentials and hit login.
 
-.. image:: https://raw.githubusercontent.com/arorasoham9/Nezha/images/page3.png?sanitize=true
+.. image:: https://raw.githubusercontent.com/arorasoham9/Nezha/main/images/page3.png?sanitize=true
   :width: 650
   :height: 300
   :alt: Login Page
 
 One logged in, you should be able to see a dashboard like the template below.
 
-.. image:: https://raw.githubusercontent.com/arorasoham9/Nezha/images/page2.png?sanitize=true
+.. image:: https://raw.githubusercontent.com/arorasoham9/Nezha/main/images/page2.png?sanitize=true
   :width: 650
   :height: 300
   :alt: Dashboard Page
 
 Choose the application you wish to connect to and hit connect.
 
-.. image:: https://raw.githubusercontent.com/arorasoham9/Nezha/images/page4.png?sanitize=true
+.. image:: https://raw.githubusercontent.com/arorasoham9/Nezha/main/images/page4.png?sanitize=true
   :width: 650
   :height: 300
   :alt: Open Web Terminal
@@ -70,7 +70,7 @@ We provide a number of and everincreasing API endpoints to allow you to incorpor
 NOTE: These endpoints will return a HTTP Status Code 503-Service Unavailable response if any authentication TOKENS, CERTS or JSON payload are missing or are incorrect.
 You may use any of the following endpoints to interact with Nezha and connect to your application.
 
-.. image:: https://raw.githubusercontent.com/arorasoham9/Nezha/images/page6.png?sanitize=true
+.. image:: https://raw.githubusercontent.com/arorasoham9/Nezha/main/images/page6.png?sanitize=true
   :width: 650
   :height: 300
   :alt: API endpoints
